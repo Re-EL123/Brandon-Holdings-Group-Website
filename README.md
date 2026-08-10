@@ -6,7 +6,7 @@ A self-contained, static HTML/CSS/JS duplicate of
 The live site is a WordPress build (Astra theme + Elementor page builder).
 This repository is a mirror of that site as served to browsers — the same
 HTML, CSS, and JavaScript — with all internal links rewritten to work
-locally. No PHP or database required.
+locally. No PHP, database, or WordPress runtime is required.
 
 ## Pages
 
@@ -21,8 +21,21 @@ locally. No PHP or database required.
 | Gallery | `gallery/index.html` |
 
 The full theme/plugin asset tree (Elementor, Royal Addons, Swiper,
-Forminator, LatePoint, jQuery, Directorist) and all uploaded images live
-under `wp-content/` and `wp-includes/`.
+Forminator, LatePoint, jQuery, Directorist) and all uploaded images and
+self-hosted fonts live under `wp-content/` and `wp-includes/`. Runtime
+requests to the live site, WordPress.com, and the WordPress plugin CDNs
+have been removed — everything needed to render the site ships with the
+repo.
+
+## Forms
+
+The contact form (Forminator `3180`), the event-hiring booking form
+(Forminator `3358`), and the WPForms contact form (`153`) post to local
+`/api/*` endpoints handled by the
+**[brandonholdingsgroup-api](https://github.com/Re-EL123/brandonholdingsgroup-api)**
+repository (private). Deploy that project alongside this one to accept and
+email submissions. Unused WordPress config AJAX calls are neutralised by
+`/api/noop`.
 
 ## Running locally
 
@@ -35,21 +48,26 @@ python3 -m http.server 8000
 
 Then open <http://localhost:8000>.
 
-You can also open `index.html` directly from the file system, but some
-animations and interactions work best when served over HTTP.
+To test the forms end-to-end, clone and run the API repo instead — its
+zero-dependency server serves both this site and the `/api/*` endpoints
+from one process:
+
+```bash
+SITE_ROOT=/path/to/this/repo node scripts/selfhost.js
+```
+
+Then open <http://localhost:8080>.
 
 ## Known limitations
 
-- **Forms**: the contact form (Forminator) and booking form (LatePoint)
-  submit to the live site's backend (`admin-ajax.php`). They keep working
-  as long as the live site is online, but there is no local backend.
-- **Fonts**: web fonts are loaded from WordPress.com's `fonts-api.wp.com`
-  CDN, so a network connection is needed for the correct typefaces.
+- **Forms**: submissions are handled by the API repo and delivered by email
+  when `RESEND_API_KEY` / `FORM_TO_EMAIL` are configured; otherwise they are
+  logged to the server console.
+- **Google Maps**: the embedded map on the contact page loads from Google
+  Maps with the site's own API key (a third-party widget, not WordPress).
 - **WordPress aliases**: on the live site several URLs (e.g.
   `/business-operations/`) actually render the home page. Here every
   menu item points to its real page instead.
-- Dynamic features that depend on the WordPress server (listings,
-  reviews, submissions) will not persist locally.
 
 ## Updating the clone
 
