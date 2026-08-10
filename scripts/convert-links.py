@@ -59,7 +59,11 @@ def map_path(p):
         if not basepath or basepath.endswith('.php') or '.' not in basepath.rsplit('/', 1)[-1]:
             return None
         query = query.replace('&#038;', '&')
-        return basepath + '%3F' + query.replace('&', '%26')
+        stem, ext = os.path.splitext(basepath)
+        local = stem + '.' + sanitize(query) + ext
+        if not os.path.exists(os.path.join(BASE, local)):
+            return None
+        return local
     if p.endswith('/'):
         d = p.lstrip('/').rstrip('/')
         if os.path.isdir(os.path.join(BASE, d)):
@@ -75,6 +79,9 @@ def map_path(p):
     return path
 
 URL_RE = re.compile(r'(?:https?:)?//brandonholdingsgroup\.com(/[^\s"\'<>()]*)')
+
+def sanitize(q):
+    return re.sub(r'[^A-Za-z0-9._-]', '-', q)
 
 def convert_file(fpath, from_dir):
     try:
@@ -133,6 +140,23 @@ def main():
             if os.path.isdir(full):
                 shutil.rmtree(full)
                 print('removed dir', d)
+
+        # 4) rename ?query files to sanitized names (keeps proper file
+        #    extensions so servers send the right MIME type)
+        renamed = 0
+        for root, dirs, files in os.walk(BASE):
+            if '.git' in root:
+                continue
+            for fn in files:
+                if '?' not in fn:
+                    continue
+                old_base, query = fn.split('?', 1)
+                stem, ext = os.path.splitext(old_base)
+                nb = f"{stem}.{sanitize(query)}{ext}"
+                os.rename(os.path.join(root, fn), os.path.join(root, nb))
+                renamed += 1
+        if renamed:
+            print(f'renamed {renamed} query-parameter files')
 
     if mode in ('convert', 'all'):
         total = 0
