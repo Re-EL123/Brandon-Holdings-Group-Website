@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/forminator.js": { "runtime": "nodejs20.x", "maxDuration": 10 },
+    "api/contact.js": { "runtime": "nodejs20.x", "maxDuration": 10 },
+    "api/noop.js": { "runtime": "nodejs20.x", "maxDuration": 10 }
+  }
+}
