@@ -56,7 +56,7 @@ def map_path(p):
     if '?' in p:
         base, query = p.split('?', 1)
         basepath = base.lstrip('/')
-        if not basepath or '.' not in basepath.rsplit('/', 1)[-1]:
+        if not basepath or basepath.endswith('.php') or '.' not in basepath.rsplit('/', 1)[-1]:
             return None
         query = query.replace('&#038;', '&')
         return basepath + '%3F' + query.replace('&', '%26')
