@@ -58,6 +58,38 @@ SITE_ROOT=/path/to/this/repo node scripts/selfhost.js
 
 Then open <http://localhost:8080>.
 
+## Site settings &amp; stats
+
+`assets/site-settings.js` (injected into all pages) posts a pageview beacon
+to `/api/stats` and pulls `GET /api/settings` to override the footer
+"Get In Touch" widget, the contact-page info section, and the social icon
+links. The recipient/sender emails and all contact details can therefore be
+changed remotely from the
+[admin UI](https://github.com/Re-EL123/brandonholdingsgroup-admin) instead of
+editing these files.
+
+## Deploying on Vercel
+
+Deploy as a static project. `vercel.json` rewrites `/api/(.*)` to the API
+deployment (keeps the site's relative `/api/*` calls working on the same
+domain):
+
+1. Set an `API_URL` environment variable (Production) on this project to the
+   API deployment, e.g. `https://brandonholdings-api.vercel.app`:
+
+   ```bash
+   vercel env add API_URL production
+   ```
+
+2. Deploy:
+
+   ```bash
+   vercel --prod
+   ```
+
+The API, site, and admin UI can be deployed together with
+`scripts/deploy.sh` from the API repo.
+
 ## Known limitations
 
 - **Forms**: submissions are handled by the API repo and delivered by email
