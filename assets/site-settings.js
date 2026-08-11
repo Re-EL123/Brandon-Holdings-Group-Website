@@ -5,9 +5,23 @@
     window.BHHG_API_BASE || 'https://brandonholdingsgroup-api-delta.vercel.app';
   var API = API_BASE + '/api';
 
+  function userID() {
+    var key = 'bhhg_uid';
+    try {
+      var v = localStorage.getItem(key);
+      if (!v) {
+        v = 'u_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(key, v);
+      }
+      return v;
+    } catch (e) {
+      return '';
+    }
+  }
+
   function beacon() {
     try {
-      var payload = { page: location.pathname };
+      var payload = { page: location.pathname, uid: userID() };
       if (document.referrer) payload.ref = document.referrer;
       if (navigator.sendBeacon) {
         navigator.sendBeacon(API + '/stats', new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
