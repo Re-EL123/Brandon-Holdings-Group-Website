@@ -10,7 +10,7 @@
       var payload = { page: location.pathname };
       if (document.referrer) payload.ref = document.referrer;
       if (navigator.sendBeacon) {
-        navigator.sendBeacon(API + '/stats', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+        navigator.sendBeacon(API + '/stats', new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
       } else {
         fetch(API + '/stats', {
           method: 'POST',
