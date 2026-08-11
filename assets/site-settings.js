@@ -1,7 +1,9 @@
 (function () {
   'use strict';
 
-  var API = '/api';
+  var API_BASE =
+    window.BHHG_API_BASE || 'https://brandonholdingsgroup-api-delta.vercel.app';
+  var API = API_BASE + '/api';
 
   function beacon() {
     try {

@@ -1,6 +1,10 @@
 (function () {
   'use strict';
 
+  var API_BASE =
+    window.BHHG_API_BASE || 'https://brandonholdingsgroup-api-delta.vercel.app';
+  var API = API_BASE + '/api';
+
   var LIVE = 'https://brandonholdingsgroup.com/wp-admin/admin-ajax.php';
   var ESCAPED_LIVE = 'https:\\/\\/brandonholdingsgroup.com\\/wp-admin\\/admin-ajax.php';
 
@@ -14,8 +18,8 @@
         continue;
       }
       if (typeof v === 'string') {
-        if (v === LIVE || v === ESCAPED_LIVE) {
-          obj[key] = '/api/noop';
+        if (v === LIVE || v === ESCAPED_LIVE || v === '/api/noop') {
+          obj[key] = API + '/noop';
         }
       } else if (v && typeof v === 'object') {
         patchObject(v, depth + 1);
@@ -25,10 +29,10 @@
 
   function applyConfigPatches() {
     try {
-      if (window.wpforms_settings) window.wpforms_settings.ajaxurl = '/api/contact';
+      if (window.wpforms_settings) window.wpforms_settings.ajaxurl = API + '/contact';
     } catch (e) {}
     try {
-      if (window.ForminatorFront) window.ForminatorFront.ajaxUrl = '/api/forminator';
+      if (window.ForminatorFront) window.ForminatorFront.ajaxUrl = API + '/forminator';
     } catch (e) {}
     ['directorist', 'latepoint_helper', 'localize', 'WprConfig', 'ElementorProFrontendConfig'].forEach(function (name) {
       try {
@@ -77,7 +81,7 @@
 
       var body = new URLSearchParams(new FormData(target).entries()).toString();
 
-      fetch('/api/contact', {
+      fetch(API + '/contact', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
