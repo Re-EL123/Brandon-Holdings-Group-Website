@@ -1,10 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": true,
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "${API_URL}/api/$1",
-      "env": ["API_URL"]
+      "dest": "https://brandonholdingsgroup-api-delta.vercel.app/api/$1"
     }
   ]
 }
