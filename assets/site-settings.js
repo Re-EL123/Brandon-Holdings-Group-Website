@@ -145,6 +145,7 @@
       'event-hiring': 'Event Hiring',
       gallery: 'Gallery',
       contact: 'Contact',
+      consultation: 'Consultation',
     };
     var segs = location.pathname.split('/').filter(Boolean);
     var last = segs[segs.length - 1];
