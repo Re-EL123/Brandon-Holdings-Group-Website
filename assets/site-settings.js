@@ -124,7 +124,7 @@
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>';
 
   var PLUS_ICON =
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>';
+    '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
 
   var CLOCK_ICON =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>';
@@ -465,7 +465,7 @@
     '.bhg-fab-toggle{width:72px;height:72px;border:none;border-radius:50%;background:#0E6563;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 14px 30px rgba(0,0,0,.45);transition:transform .22s ease,box-shadow .22s ease;animation:bhg-fab-bob 3.2s ease-in-out infinite}' +
     '.bhg-fab-toggle:hover{box-shadow:0 20px 38px rgba(0,0,0,.52);transform:scale(1.06)}' +
     '.bhg-fab-toggle:focus-visible{outline:3px solid #fff;outline-offset:4px}' +
-    '.bhg-fab-toggle svg{width:42px;height:42px;fill:#fff;transition:transform .25s ease}' +
+    '.bhg-fab-toggle svg{width:36px;height:36px;stroke:#fff;fill:none;transition:transform .25s ease}' +
     '.bhg-fab.open .bhg-fab-toggle svg{transform:rotate(45deg)}' +
     '.bhg-fab-actions .bhg-fab-action:nth-child(1){animation:bhg-fab-in .36s ease-out both}' +
     '.bhg-fab-actions .bhg-fab-action:nth-child(2){animation:bhg-fab-in .36s ease-out .06s both}' +
