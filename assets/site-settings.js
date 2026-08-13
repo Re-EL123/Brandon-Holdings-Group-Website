@@ -502,7 +502,8 @@
   }
   beacon();
 
-function buildGlobalCart() {
+  function buildGlobalCart() {
+    window.buildGlobalCart = buildGlobalCart;
     if (document.getElementById('bhg-cart-widget')) return;
     var div = document.createElement('div');
     div.innerHTML = `
@@ -667,7 +668,7 @@ function buildGlobalCart() {
   }
 
   window.openCartModal = function() {
-      window.buildGlobalCart();
+      buildGlobalCart();
       window.updateCartUI();
       const modal = document.getElementById('bhg-cart-modal');
       if (modal) modal.style.display = 'flex';
