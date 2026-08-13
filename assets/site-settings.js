@@ -142,7 +142,7 @@
       'business-operations': 'Business Operations',
       'labour-law': 'Labour Law',
       'multimedia-marketing': 'Multimedia Marketing',
-      'event-hiring': 'Event Hiring',
+      'services': 'Services',
       gallery: 'Gallery',
       contact: 'Contact',
       consultation: 'Consultation',
