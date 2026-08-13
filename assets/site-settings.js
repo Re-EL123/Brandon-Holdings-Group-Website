@@ -754,6 +754,11 @@ function buildGlobalCart() {
       if (btn) { btn.innerText = 'Proceed to Pay Now'; btn.disabled = false; }
   }
 
+  if (typeof document !== 'undefined' && document.body) {
+      buildGlobalCart();
+      updateCartUI();
+  }
+
 })();
 
 
