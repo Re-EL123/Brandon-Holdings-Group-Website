@@ -501,10 +501,8 @@
     loadSettings();
   }
   beacon();
-})();
 
-
-  function buildGlobalCart() {
+function buildGlobalCart() {
     if (document.getElementById('bhg-cart-widget')) return;
     var div = document.createElement('div');
     div.innerHTML = `
@@ -755,3 +753,8 @@
       if (succSec) succSec.style.display = 'none';
       if (btn) { btn.innerText = 'Proceed to Pay Now'; btn.disabled = false; }
   }
+
+})();
+
+
+  
