@@ -185,10 +185,10 @@
     fab.className = 'bhg-fab';
     fab.innerHTML =
       '<div class="bhg-fab-actions">' +
-      '<a class="bhg-fab-action bhg-fab-wa" href="' + waLink(DEFAULTS.whatsapp) + '" target="_blank" rel="noopener">' +
-      WA_ICON + '<span>WhatsApp</span></a>' +
       '<a class="bhg-fab-action bhg-fab-book" href="' + consultHref() + '">' +
       CAL_ICON + '<span>Book a consultation</span></a>' +
+      '<a class="bhg-fab-action bhg-fab-wa" href="' + waLink(DEFAULTS.whatsapp) + '" target="_blank" rel="noopener">' +
+      WA_ICON + '<span>WhatsApp</span></a>' +
       '</div>' +
       '<button type="button" class="bhg-fab-toggle" aria-label="Contact options" aria-expanded="false">' +
       PLUS_ICON + '</button>';
@@ -244,7 +244,14 @@
     }
   }
 
-  function addResponseBadge() {
+   function escHtml(s) {
+     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+     });
+   }
+
+   function addResponseBadge() {
+
     var form = document.getElementById('wpforms-form-153');
     if (!form) return;
     var holder = form.parentNode;
@@ -255,19 +262,177 @@
     holder.parentNode.insertBefore(b, holder);
   }
 
-  function renderGeo(geo) {
-    if (!geo) return;
-    var parts = [];
-    if (geo.city) parts.push(geo.city);
-    if (geo.region) parts.push(geo.region);
-    if (geo.country) parts.push(geo.country);
-    if (!parts.length) return;
-    var line = document.createElement('p');
-    line.className = 'bhg-geo';
-    line.textContent = 'Proudly serving clients in ' + parts.join(', ') + ' and beyond.';
-    var foot = document.getElementById('colophon');
-    if (foot) foot.appendChild(line);
-  }
+   function animateStats() {
+     if (!(window.requestAnimationFrame && window.IntersectionObserver)) return;
+     var spans = document.querySelectorAll('h3.elementor-icon-box-title span');
+     var targets = [];
+     for (var i = 0; i < spans.length; i++) {
+       var txt = (spans[i].textContent || '').trim();
+       var m = txt.match(/^(\d+)\s*([+%°]*)$/);
+       if (!m) continue;
+       targets.push({ el: spans[i], value: parseInt(m[1], 10), suffix: m[2] });
+     }
+     if (!targets.length) return;
+     var io = new IntersectionObserver(function (entries) {
+       entries.forEach(function (en) {
+         if (!en.isIntersecting) return;
+         for (var k = 0; k < targets.length; k++) {
+           if (targets[k].el === en.target) {
+             var t = targets[k], from = 0, to = t.value, dur = 1400, start = null;
+             (function step(now) {
+               if (!start) start = now;
+               var p = Math.min((now - start) / dur, 1);
+               var e = 1 - Math.pow(1 - p, 3);
+               t.el.textContent = Math.round(from + (to - from) * e) + t.suffix;
+               if (p < 1) requestAnimationFrame(step);
+               else t.el.textContent = to + t.suffix;
+             })(null);
+             io.unobserve(t.el);
+           }
+         }
+       });
+     }, { threshold: 0.4 });
+     for (var n = 0; n < targets.length; n++) {
+       targets[n].el.textContent = '0' + targets[n].suffix;
+       io.observe(targets[n].el);
+     }
+   }
+
+   function enhanceConsultForm() {
+     var form = document.querySelector('form[data-form-id="3180"]');
+     if (!form || form.querySelector('.bhg-pay-now')) return;
+
+     var amountRow = document.createElement('div');
+     amountRow.className = 'forminator-row bhg-pay-row';
+     amountRow.innerHTML =
+       '<div class="forminator-col forminator-col-12"><div class="forminator-field">' +
+       '<label class="forminator-label" for="bhg-pay-amount">Consultation fee (ZAR) <span class="forminator-required">*</span></label>' +
+       '<input type="number" min="1" step="1" name="payment_amount" id="bhg-pay-amount" class="forminator-input" inputmode="numeric" placeholder="e.g. 500">' +
+       '<span class="forminator-description" style="display:block">Enter the fee you wish to pay. You will receive a payment link after submitting.</span>' +
+       '</div></div>';
+
+     var payBtnRow = document.createElement('div');
+     payBtnRow.className = 'forminator-row bhg-pay-row';
+     payBtnRow.innerHTML =
+       '<div class="forminator-col"><div class="forminator-field">' +
+       '<button type="button" class="forminator-button bhg-pay-now" style="margin-bottom:14px"><span>Pay Now and Consult</span></button>' +
+       '</div></div>';
+
+     var last = form.querySelector('.forminator-row-last') || (form.lastElementChild && form.lastElementChild.tagName === 'DIV' ? form.lastElementChild : null);
+     var anchor = last ? last : form;
+     form.insertBefore(amountRow, anchor);
+     form.insertBefore(payBtnRow, anchor);
+
+      attachPayNow(form);
+    }
+
+    function showPayError(form, msg) {
+     var box = form.querySelector('.bhg-pay-error');
+     if (!box) {
+       box = document.createElement('div');
+       box.className = 'bhg-pay-error forminator-response-message forminator-error';
+       box.setAttribute('role', 'alert');
+       box.style.cssText = 'margin:0 0 14px;padding:14px 16px;background:#fdf3f3;border:1px solid #f2cccc;border-radius:6px;color:#b5451f;font-size:15px';
+       form.insertBefore(box, form.querySelector('.forminator-row-last') || form.firstChild);
+     }
+     box.innerHTML = '<span>' + escHtml(msg) + '</span>';
+   }
+
+   function payBannerHTML(payment, amount) {
+     if (!payment || !payment.link) {
+       return '<div style="padding:6px;text-align:center">' +
+         '<p style="font-size:16px;font-weight:700;margin:0 0 4px">Thanks for reaching out.</p>' +
+         '<p style="margin:0">Your consultation request has been sent and we will be in touch shortly.</p></div>';
+     }
+     return '<div style="padding:6px;text-align:center">' +
+       '<p style="font-size:16px;font-weight:700;margin:0 0 6px">Consultation request received.</p>' +
+       '<p style="margin:0 0 4px">Fee: <strong>R ' + escHtml(amount || payment.amount || '') + '</strong></p>' +
+       '<p style="margin:0 0 12px">Complete your payment to secure your consultation slot:</p>' +
+       '<p style="margin:0"><a class="bhg-pay-link" href="' + escHtml(payment.link) + '" target="_blank" rel="noopener" style="display:inline-block;background:#0E6563;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700">Complete payment now</a></p>' +
+       '<p style="margin-top:10px;font-size:13px;color:#666">A copy of this link was also emailed to you.</p></div>';
+   }
+
+   function attachPayNow(form) {
+     var btn = form.querySelector('.bhg-pay-now');
+     if (!btn || btn._bhgPayBound) return;
+     btn._bhgPayBound = true;
+     btn.addEventListener('click', function () {
+       var nameIn = form.querySelector('[name="name-1"]');
+       var emailIn = form.querySelector('[name="email-1"]');
+       var amt = form.querySelector('[name="payment_amount"]');
+       if (!nameIn || !nameIn.value.trim() || !emailIn || !emailIn.value.trim()) {
+         showPayError(form, 'Please fill in your first name and email address first.');
+         return;
+       }
+       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailIn.value.trim())) {
+         showPayError(form, 'Please enter a valid email address.');
+         return;
+       }
+       var amount = amt ? amt.value.trim() : '';
+       if (!amount || isNaN(+amount) || +amount <= 0) {
+         showPayError(form, 'Please enter a consultation fee amount (ZAR).');
+         return;
+       }
+       var err = form.querySelector('.bhg-pay-error');
+       if (err) err.remove();
+       btn.disabled = true;
+       var original = btn.innerHTML;
+       btn.innerHTML = '<span>Processing…</span>';
+       var fd = new FormData(form);
+       fd.set('payment_mode', 'pay_now');
+
+       fetch(API + '/forminator', { method: 'POST', body: fd })
+         .then(function (r) { return r.json(); })
+         .then(function (d) {
+           btn.disabled = false;
+           btn.innerHTML = original;
+           if (d && d.success) {
+             form.style.display = 'none';
+             var parent = form.parentNode;
+             var banner = document.createElement('div');
+             banner.className = 'bhg-pay-banner';
+             banner.setAttribute('role', 'status');
+             banner.style.cssText = 'max-width:640px;margin:0 auto;text-align:center';
+             banner.innerHTML = payBannerHTML((d.data && d.data.payment) || null, amount);
+             if (parent) parent.insertBefore(banner, form.nextSibling);
+             try {
+               window.scrollTo({ top: Math.max(0, banner.getBoundingClientRect().top + window.scrollY - 90), behavior: 'smooth' });
+             } catch (e) { /* noop */ }
+           } else {
+             showPayError(form, (d && d.message) || 'Sorry, something went wrong. Please try again.');
+           }
+         })
+         .catch(function () {
+           btn.disabled = false;
+           btn.innerHTML = original;
+           showPayError(form, 'Network error — please try again.');
+         });
+     });
+   }
+
+   function applyIkho(ikho) {
+     if (!ikho || typeof ikho !== 'object') return;
+     var rows = document.querySelectorAll('form[data-form-id="3180"] .bhg-pay-row');
+     if (rows.length) {
+       for (var i = 0; i < rows.length; i++) rows[i].style.display = ikho.enabled === false ? 'none' : '';
+     }
+      var amt = document.querySelector('form[data-form-id="3180"] [name="payment_amount"]');
+      if (amt && !amt.value && ikho.fee) amt.value = String(ikho.fee).replace(/[^\d.]/g, '');
+    }
+
+   function renderGeo(geo) {
+     if (!geo) return;
+     var parts = [];
+     if (geo.city) parts.push(geo.city);
+     if (geo.region) parts.push(geo.region);
+     if (geo.country) parts.push(geo.country);
+     if (!parts.length) return;
+     var line = document.createElement('p');
+     line.className = 'bhg-geo';
+     line.textContent = 'Proudly serving clients in ' + parts.join(', ') + ' and beyond.';
+     var foot = document.getElementById('colophon');
+     if (foot) foot.appendChild(line);
+   }
 
   function loadSettings() {
     fetch(API + '/settings')
@@ -281,12 +446,13 @@
           updateCTAs(d.contact);
         }
         renderGeo(d.visitorGeo);
+        applyIkho(d.iKhokha);
       })
       .catch(function () { /* noop */ });
-  }
+   }
 
-  injectStyle(
-    '.bhg-fab{position:fixed;right:20px;bottom:20px;z-index:99990;display:flex;flex-direction:column;align-items:flex-end;gap:12px}' +
+   injectStyle(
+     '.bhg-fab{position:fixed;right:20px;bottom:20px;z-index:99990;display:flex;flex-direction:column;align-items:flex-end;gap:12px}' +
     '.bhg-fab-actions{display:flex;flex-direction:column;align-items:flex-end;gap:10px;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease,visibility .25s}' +
     '.bhg-fab.open .bhg-fab-actions{opacity:1;visibility:visible;transform:none}' +
     '.bhg-fab-action{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;color:#fff;text-decoration:none;font:600 14px/1 Arial,Helvetica,sans-serif;box-shadow:0 6px 16px rgba(0,0,0,.22);white-space:nowrap}' +
@@ -307,11 +473,13 @@
     '.bhg-rbadge svg{width:15px;height:15px;fill:#0E6563;flex:none}'
   );
 
-  onReady(function () {
-    buildFAB();
-    buildMobileBar();
-    addResponseBadge();
-  });
+   onReady(function () {
+     buildFAB();
+     buildMobileBar();
+     addResponseBadge();
+     animateStats();
+     enhanceConsultForm();
+   });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadSettings);
