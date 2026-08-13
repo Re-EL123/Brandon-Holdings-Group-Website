@@ -126,6 +126,9 @@
   var PLUS_ICON =
     '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
 
+    var CART_ICON =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>';
+
   var CLOCK_ICON =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>';
 
@@ -484,6 +487,8 @@
 
    onReady(function () {
      buildFAB();
+    buildGlobalCart();
+    updateCartUI();
      buildMobileBar();
      addResponseBadge();
      animateStats();
@@ -497,3 +502,256 @@
   }
   beacon();
 })();
+
+
+  function buildGlobalCart() {
+    if (document.getElementById('bhg-cart-widget')) return;
+    var div = document.createElement('div');
+    div.innerHTML = `
+      <div id="bhg-cart-widget" onclick="openCartModal()" style="position:fixed;bottom:24px;left:24px;background:#0E6563;color:#fff;padding:12px 20px;border-radius:30px;box-shadow:0 6px 24px rgba(0,0,0,.2);cursor:pointer;z-index:99990;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;transition:transform .2s;">
+        ${CART_ICON}
+        <span>Cart</span>
+        <span style="background:#fff;color:#0E6563;padding:2px 8px;border-radius:12px;font-size:12px;" id="floating-cart-count">0</span>
+        <span id="floating-cart-total">R0.00</span>
+      </div>
+
+      <div id="bhg-cart-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;width:100%;max-width:640px;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:90vh;display:flex;flex-direction:column;">
+            <div style="background:#0E6563;color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;font-size:20px;">Your Selected Services</h3>
+                <button onclick="closeCartModal()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;">&times;</button>
+            </div>
+            <div style="padding:24px;overflow-y:auto;flex-grow:1;" id="cart-modal-body">
+                <div id="cart-items-list" style="margin-bottom:20px;"></div>
+                <div style="border-top:2px solid #eee;padding-top:16px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:800;color:#0F172A;margin-bottom:20px;">
+                    <span>Total:</span>
+                    <span id="cart-modal-total">R0.00</span>
+                </div>
+                
+                <div id="checkout-form-section" style="background:#F8FAFC;padding:20px;border-radius:12px;">
+                    <h4 style="margin:0 0 12px;font-size:16px;color:#0F172A;">Complete Checkout & Pay Now</h4>
+                    <p style="font-size:14px;color:#454F5E;margin-bottom:16px;">Enter your email to receive your secure iKhokha payment link and order confirmation.</p>
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;font-size:13px;font-weight:700;color:#0F172A;margin-bottom:6px;">Your Email Address *</label>
+                        <input type="email" id="checkout-email" placeholder="name@example.com" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:6px;font-size:15px;" required />
+                    </div>
+                    <button onclick="submitCheckout()" id="checkout-submit-btn" style="width:100%;background:#0E6563;color:#fff;border:none;padding:14px;border-radius:6px;font-weight:700;font-size:16px;cursor:pointer;">Proceed to Pay Now</button>
+                </div>
+
+                <div id="checkout-success-section" style="display:none;background:#EDF6EE;border:1px solid #178E79;padding:20px;border-radius:12px;text-align:center;">
+                    <h4 style="color:#0E6563;margin-top:0;">Payment Request Ready!</h4>
+                    <p id="checkout-success-msg" style="color:#0F172A;font-size:15px;margin-bottom:16px;"></p>
+                    <div id="checkout-link-container" style="margin-bottom:16px;"></div>
+                    <button onclick="clearCartAndClose()" style="background:#454F5E;color:#fff;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;">Close & Reset</button>
+                </div>
+            </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(div);
+  }
+
+  // Global cart helpers
+  window.cart = JSON.parse(localStorage.getItem('bhg_cart') || '[]');
+
+  window.saveCart = function() {
+      localStorage.setItem('bhg_cart', JSON.stringify(window.cart));
+      window.updateCartUI();
+  }
+
+  window.getCartTotal = function() {
+      return window.cart.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
+  }
+
+  window.hasItem = function(id) {
+      return window.cart.some(item => item.id === id);
+  }
+
+  window.validatePrerequisites = function(targetId) {
+      if (targetId === 1) return true;
+      if (targetId === 2 && !window.hasItem(1)) {
+          alert('Prerequisite Notice: You must add and complete Step 1 (Virtual Business Consultation) before purchasing Step 2.');
+          return false;
+      }
+      if (targetId === 3 && !window.hasItem(2)) {
+          alert('Prerequisite Notice: You must add and complete Step 2 (Business Plan & Documentation) before proceeding to Step 3.');
+          return false;
+      }
+      if (targetId >= 4 && targetId <= 6 && !window.hasItem(3)) {
+          alert('Growth Tiers Locked: You must complete Step 3 (Business Systems & Documentation Support) before unlocking Growth Tiers (4 → 5 → 6).');
+          return false;
+      }
+      return true;
+  }
+
+  window.addToCart = function(id, name, price, step, isTier) {
+      if (!window.validatePrerequisites(id)) return;
+      let existing = window.cart.find(item => item.id === id);
+      if (existing) {
+          existing.qty = (existing.qty || 1) + 1;
+      } else {
+          window.cart.push({ id, name, price, qty: 1, step, isTier });
+      }
+      window.saveCart();
+      alert('Added "' + name + '" to your cart!');
+      window.openCartModal();
+  }
+
+  window.removeFromCart = function(id) {
+      window.cart = window.cart.filter(item => item.id !== id);
+      if (!window.hasItem(1)) {
+          window.cart = window.cart.filter(item => item.id === 1);
+      } else if (!window.hasItem(2)) {
+          window.cart = window.cart.filter(item => item.id <= 2);
+      } else if (!window.hasItem(3)) {
+          window.cart = window.cart.filter(item => item.id <= 3);
+      }
+      window.saveCart();
+  }
+
+  window.updateCartUI = function() {
+      const totalQty = window.cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+      const totalPrice = window.getCartTotal();
+      
+      const fc = document.getElementById('floating-cart-count');
+      const ft = document.getElementById('floating-cart-total');
+      const mt = document.getElementById('cart-modal-total');
+      const hc = document.getElementById('hero-cart-count');
+      
+      if (fc) fc.innerText = totalQty;
+      if (ft) ft.innerText = 'R' + totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      if (mt) mt.innerText = 'R' + totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      if (hc) hc.innerText = totalQty;
+      
+      const step3Done = window.hasItem(3);
+      const lockBanner = document.getElementById('tiers-lock-banner');
+      if (lockBanner) {
+          if (step3Done) {
+              lockBanner.style.background = '#EDF6EE';
+              lockBanner.style.borderColor = '#178E79';
+              lockBanner.style.color = '#0E6563';
+              lockBanner.innerHTML = '✨ Growth Tiers (Steps 4 → 5 → 6) are now UNLOCKED! You can select an ongoing advisory tier.';
+              document.querySelectorAll('.tier-card').forEach(c => { c.style.opacity = '1'; c.style.pointerEvents = 'auto'; });
+          } else {
+              lockBanner.style.background = '#FEF3C7';
+              lockBanner.style.borderColor = '#F59E0B';
+              lockBanner.style.color = '#92400E';
+              lockBanner.innerHTML = '🔒 Growth Tiers (Steps 4 → 5 → 6) are locked. Complete Step 3 to unlock ongoing monthly advisory.';
+          }
+      }
+
+      const listEl = document.getElementById('cart-items-list');
+      const formSec = document.getElementById('checkout-form-section');
+      if (listEl) {
+          let listHTML = '';
+          if (window.cart.length === 0) {
+              listHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">Your cart is currently empty.</p>';
+              if (formSec) formSec.style.display = 'none';
+          } else {
+              if (formSec) formSec.style.display = 'block';
+              window.cart.forEach(item => {
+                  listHTML += `
+                      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9;">
+                          <div>
+                              <div style="font-weight:700;color:#0F172A;font-size:15px;">${item.name}</div>
+                              <div style="font-size:13px;color:#64748b;">R${item.price.toLocaleString()} x ${item.qty || 1}</div>
+                          </div>
+                          <div style="display:flex;align-items:center;gap:12px;">
+                              <span style="font-weight:800;color:#0E6563;">R${(item.price * (item.qty || 1)).toLocaleString()}</span>
+                              <button onclick="removeFromCart(${item.id})" style="background:#fee2e2;color:#991b1b;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-weight:bold;">&times;</button>
+                          </div>
+                      </div>
+                  `;
+              });
+          }
+          listEl.innerHTML = listHTML;
+      }
+  }
+
+  window.openCartModal = function() {
+      window.buildGlobalCart();
+      window.updateCartUI();
+      const modal = document.getElementById('bhg-cart-modal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  window.closeCartModal = function() {
+      const modal = document.getElementById('bhg-cart-modal');
+      if (modal) modal.style.display = 'none';
+  }
+
+  window.submitCheckout = async function() {
+      const emailInput = document.getElementById('checkout-email').value.trim();
+      if (!emailInput || !emailInput.includes('@')) {
+          alert('Please enter a valid email address to receive your payment link and confirmation.');
+          return;
+      }
+      if (window.cart.length === 0) {
+          alert('Your cart is empty.');
+          return;
+      }
+
+      const btn = document.getElementById('checkout-submit-btn');
+      btn.innerText = 'Processing Order...';
+      btn.disabled = true;
+
+      const totalAmount = window.getCartTotal().toFixed(2);
+      const apiBase = window.BHHG_API_BASE || 'https://brandonholdingsgroup-api-delta.vercel.app';
+
+      const fd = new FormData();
+      fd.append('form_id', 'services-checkout');
+      fd.append('email', emailInput);
+      fd.append('total', totalAmount);
+      fd.append('cart_items', JSON.stringify(window.cart));
+
+      try {
+          const res = await fetch(apiBase + '/api/forminator', {
+              method: 'POST',
+              body: fd
+          });
+          const data = await res.json();
+          
+          const formSec = document.getElementById('checkout-form-section');
+          if (formSec) formSec.style.display = 'none';
+          const succSec = document.getElementById('checkout-success-section');
+          if (succSec) succSec.style.display = 'block';
+
+          let msg = 'Your order total is <strong>R ' + totalAmount + '</strong>. A confirmation email with your payment link has been sent to <strong>' + emailInput + '</strong>.';
+          let linkHTML = '';
+
+          if (data && data.data && data.data.payment && data.data.payment.link) {
+              const link = data.data.payment.link;
+              linkHTML = `
+                  <div style="background:#fff;padding:16px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:16px;">
+                      <p style="margin:0 0 10px;font-weight:700;color:#0F172A;">Direct Payment Link:</p>
+                      <a href="${link}" target="_blank" style="display:inline-block;background:#0E6563;color:#fff;padding:12px 24px;border-radius:6px;font-weight:700;text-decoration:none;margin-bottom:8px;">Pay Now via iKhokha (R ${totalAmount})</a>
+                      <div style="font-size:12px;color:#64748b;word-break:break-all;">${link}</div>
+                  </div>
+              `;
+          } else {
+              linkHTML = '<p style="color:#d97706;">Payment gateway link is currently disabled or unconfigured in admin settings. Please contact support.</p>';
+          }
+
+          const sMsg = document.getElementById('checkout-success-msg');
+          const lCont = document.getElementById('checkout-link-container');
+          if (sMsg) sMsg.innerHTML = msg;
+          if (lCont) lCont.innerHTML = linkHTML;
+
+      } catch (e) {
+          alert('Checkout error: ' + e.message);
+          btn.innerText = 'Proceed to Pay Now';
+          btn.disabled = false;
+      }
+  }
+
+  window.clearCartAndClose = function() {
+      window.cart = [];
+      window.saveCart();
+      window.closeCartModal();
+      const formSec = document.getElementById('checkout-form-section');
+      const succSec = document.getElementById('checkout-success-section');
+      const btn = document.getElementById('checkout-submit-btn');
+      if (formSec) formSec.style.display = 'block';
+      if (succSec) succSec.style.display = 'none';
+      if (btn) { btn.innerText = 'Proceed to Pay Now'; btn.disabled = false; }
+  }
