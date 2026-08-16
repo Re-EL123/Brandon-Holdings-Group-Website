@@ -480,6 +480,7 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
         </div>
 
         <!-- Carousel Track (swipe / drag to scroll) -->
+        <div id="bhg-services-carousel-wrap" class="bhg-services-carousel-wrap">
         <div id="bhg-services-carousel" style="display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:16px;scrollbar-width:thin;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:pan-y;">
             
             <!-- Item 1 -->
@@ -562,12 +563,35 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
             </div>
 
         </div>
+        <button type="button" id="bhg-carousel-prev" class="bhg-edge bhg-edge-prev" aria-label="Previous services">&#8249;</button>
+        <button type="button" id="bhg-carousel-next" class="bhg-edge bhg-edge-next" aria-label="Next services">&#8250;</button>
+        </div>
     </div>
 </div>
+<style>
+    .bhg-services-carousel-wrap { position: relative; }
+    .bhg-edge {
+        position: absolute; top: 50%; transform: translateY(-50%) scale(1);
+        width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
+        background: #0E6563; color: #fff; font-size: 26px; line-height: 1;
+        display: none; align-items: center; justify-content: center;
+        box-shadow: 0 4px 14px rgba(14, 101, 99, .35); z-index: 5;
+        opacity: 0; transition: opacity .25s ease, transform .25s ease, background .25s ease;
+    }
+    .bhg-edge-prev { left: 4px; }
+    .bhg-edge-next { right: 4px; }
+    .bhg-edge:hover { background: #0a4f4d; transform: translateY(-50%) scale(1.1); }
+    .bhg-edge:active { transform: translateY(-50%) scale(.92); }
+    .bhg-services-carousel-wrap:hover .bhg-edge { opacity: 1; }
+    @media (hover: hover) and (min-width: 768px) {
+        .bhg-edge { display: flex; }
+    }
+</style>
 <script>
 (function () {
+    var wrap = document.getElementById('bhg-services-carousel-wrap');
     var track = document.getElementById('bhg-services-carousel');
-    if (!track) return;
+    if (!wrap || !track) return;
 
     var isDown = false;
     var startX = 0;
@@ -612,6 +636,32 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
             dragged = false;
         }
     }, true);
+
+    // Press the left/right side of the carousel on desktop to swipe that way.
+    function swipeCarousel(dir) {
+        var cards = [].slice.call(track.children);
+        if (!cards.length) return;
+        var left = track.scrollLeft;
+        var target = null;
+        if (dir > 0) {
+            for (var i = 0; i < cards.length; i++) {
+                var cl = cards[i].offsetLeft;
+                if (cl > left + 8) { target = cl; break; }
+            }
+            if (target === null) target = track.scrollWidth - track.clientWidth;
+        } else {
+            for (var i = cards.length - 1; i >= 0; i--) {
+                var cl = cards[i].offsetLeft;
+                if (cl < left - 8) { target = cl; break; }
+            }
+            if (target === null) target = 0;
+        }
+        track.scrollTo({ left: target, behavior: 'smooth' });
+    }
+    var prev = document.getElementById('bhg-carousel-prev');
+    var next = document.getElementById('bhg-carousel-next');
+    if (prev) prev.addEventListener('click', function () { swipeCarousel(-1); });
+    if (next) next.addEventListener('click', function () { swipeCarousel(1); });
 })();
 </script>
 <div class="elementor-element elementor-element-3445653 e-flex e-con-boxed wpr-particle-no wpr-jarallax-no wpr-parallax-no wpr-sticky-section-no wpr-column-slider-no wpr-equal-height-no e-con e-parent" data-id="3445653" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
