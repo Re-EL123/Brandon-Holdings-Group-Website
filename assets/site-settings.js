@@ -342,12 +342,17 @@
      box.innerHTML = '<span>' + escHtml(msg) + '</span>';
    }
 
-   function payBannerHTML(payment, amount) {
-     if (!payment || !payment.link) {
-       return '<div style="padding:6px;text-align:center">' +
-         '<p style="font-size:16px;font-weight:700;margin:0 0 4px">Thanks for reaching out.</p>' +
-         '<p style="margin:0">Your consultation request has been sent and we will be in touch shortly.</p></div>';
-     }
+    function payBannerHTML(payment, amount) {
+      if (!payment || !payment.link) {
+        if (payment && payment.error) {
+          return '<div style="padding:6px;text-align:center">' +
+            '<p style="font-size:16px;font-weight:700;margin:0 0 4px">Payment link could not be created.</p>' +
+            '<p style="margin:0;color:#b5451f">' + escHtml(payment.error) + '</p></div>';
+        }
+        return '<div style="padding:6px;text-align:center">' +
+          '<p style="font-size:16px;font-weight:700;margin:0 0 4px">Thanks for reaching out.</p>' +
+          '<p style="margin:0">Your consultation request has been sent and we will be in touch shortly.</p></div>';
+      }
      return '<div style="padding:6px;text-align:center">' +
        '<p style="font-size:16px;font-weight:700;margin:0 0 6px">Consultation request received.</p>' +
        '<p style="margin:0 0 4px">Fee: <strong>R ' + escHtml(amount || payment.amount || '') + '</strong></p>' +
@@ -731,6 +736,8 @@
                       <div style="font-size:12px;color:#64748b;word-break:break-all;">${link}</div>
                   </div>
               `;
+          } else if (data.data.payment && data.data.payment.error) {
+              linkHTML = '<p style="color:#b5451f;">Payment link could not be created: ' + escHtml(data.data.payment.error) + '</p>';
           } else {
               linkHTML = '<p style="color:#d97706;">Payment gateway link is currently disabled or unconfigured in admin settings. Please contact support.</p>';
           }
