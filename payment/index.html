@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Payment status — Brandon Holdings</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f6; color: #1c2b2a; min-height: 100vh; display: flex; flex-direction: column; }
+  header { background: #0E6563; color: #fff; padding: 18px 24px; }
+  header a { color: #fff; text-decoration: none; font-size: 15px; font-weight: 600; }
+  header a:hover { text-decoration: underline; }
+  .wrap { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; }
+  .card { background: #fff; border-radius: 10px; box-shadow: 0 6px 24px rgba(14,101,99,.10); max-width: 560px; width: 100%; padding: 34px 30px; text-align: center; }
+  .icon { font-size: 44px; margin-bottom: 10px; }
+  h1 { font-size: 22px; margin-bottom: 8px; color: #0E6563; }
+  p { color: #4a5a58; font-size: 15px; line-height: 1.55; margin-bottom: 8px; }
+  .ref { font-family: monospace; font-size: 13px; background: #eef4f3; border: 1px solid #d8e6e4; border-radius: 6px; padding: 8px 12px; display: inline-block; margin: 6px 0 12px; color: #0E6563; }
+  .btn { display: inline-block; background: #0E6563; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 700; margin-top: 10px; }
+  .btn:hover { background: #0a4f4d; }
+  .meta { margin-top: 16px; font-size: 13px; color: #7b8a88; }
+  .spinner { width: 34px; height: 34px; border: 4px solid #d8e6e4; border-top-color: #0E6563; border-radius: 50%; margin: 0 auto 14px; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pending p { font-size: 15px; }
+</style>
+</head>
+<body>
+<header><a href="/">← Back to Brandon Holdings</a></header>
+<div class="wrap">
+  <div class="card" id="card" role="status" aria-live="polite">
+    <div class="spinner"></div>
+    <h1>Checking payment status…</h1>
+    <p>Please wait a moment while we confirm your payment.</p>
+  </div>
+</div>
+<script>
+  (function () {
+    'use strict';
+    var API_BASE = window.BHHG_API_BASE || 'https://brandonholdingsgroup-api-delta.vercel.app';
+    var API = API_BASE + '/api';
+
+    var params = new URLSearchParams(window.location.search);
+    var ref = (params.get('ref') || '').trim();
+    var outcome = (params.get('outcome') || '').toLowerCase();
+
+    var card = document.getElementById('card');
+    var polled = 0;
+    var MAX_POLLS = 20;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function render(icon, title, body, button) {
+      card.innerHTML =
+        '<div class="icon">' + icon + '</div>' +
+        '<h1>' + esc(title) + '</h1>' +
+        (ref ? '<span class="ref">' + esc(ref) + '</span>' : '') +
+        body +
+        (button ? button : '') +
+        '<p class="meta">If you have any questions, reply to your confirmation email or contact us directly.</p>';
+    }
+
+    function renderByStatus(status) {
+      if (status === 'paid') {
+        render('&#9989;', 'Payment received — thank you!',
+          '<p>Your payment has been confirmed. We will be in touch shortly to confirm your consultation details.</p>',
+          '<a class="btn" href="/">Back to the site</a>');
+      } else if (status === 'failed') {
+        render('&#10060;', 'Payment was not completed',
+          '<p>Unfortunately your payment did not go through. You can try again, or contact us if you believe this is a mistake.</p>',
+          '<a class="btn" href="/">Back to the site</a>');
+      } else if (status === 'cancelled') {
+        render('&#9200;', 'Payment cancelled',
+          '<p>You cancelled the payment. No money was taken. You can start again whenever you are ready.</p>',
+          '<a class="btn" href="/">Back to the site</a>');
+      } else {
+        render('&#128337;', 'Payment pending',
+          '<p>Your payment is still being processed. This page refreshes automatically — it usually takes under a minute. If you were redirected here after paying, please stay on this page.</p>',
+          null);
+      }
+    }
+
+    function pollStatus() {
+      if (!ref) {
+        render('&#10060;', 'Invalid payment reference',
+          '<p>No payment reference was provided. Please use the link from your confirmation email, or contact us.</p>');
+        return;
+      }
+      fetch(API + '/ikhokha/status?ref=' + encodeURIComponent(ref), { method: 'GET' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok) {
+            if (d && d.error === 'Payment not found') {
+              render('&#10060;', 'Payment not found',
+                '<p>We could not find that payment reference. Please check the link or contact us for assistance.</p>');
+            } else if (polled < MAX_POLLS) {
+              polled += 1;
+              setTimeout(pollStatus, 4000);
+            } else {
+              render('&#128337;', 'Still checking…',
+                '<p>We could not confirm your payment yet. Please check your email for your payment link and confirmation.</p>',
+                '<a class="btn" href="/">Back to the site</a>');
+            }
+            return;
+          }
+          renderByStatus(d.status);
+          if (d.status === 'pending' && polled < MAX_POLLS) {
+            polled += 1;
+            setTimeout(pollStatus, 4000);
+          }
+        })
+        .catch(function () {
+          if (polled < MAX_POLLS) {
+            polled += 1;
+            setTimeout(pollStatus, 4000);
+          } else {
+            render('&#128337;', 'Could not reach the server',
+              '<p>We could not check your payment status right now. Please check your email for your payment link and confirmation.</p>',
+              '<a class="btn" href="/">Back to the site</a>');
+          }
+        });
+    }
+
+    // Initial render: if we were redirected from iKhokha, show the matching
+    // state immediately, then let the poll confirm it.
+    if (outcome === 'success') renderByStatus('paid');
+    else if (outcome === 'failure') renderByStatus('failed');
+    else if (outcome === 'cancelled') renderByStatus('cancelled');
+    pollStatus();
+  })();
+</script>
+</body>
+</html>

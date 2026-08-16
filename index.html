@@ -475,14 +475,12 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
                 <h2 style="font-size:32px;color:#0F172A;margin:8px 0 0;font-weight:800;">Our Services & Growth Tiers</h2>
             </div>
             <div style="display:flex;gap:10px;">
-                <button onclick="scrollCarousel(-1)" style="background:#0E6563;color:#fff;border:none;width:40px;height:40px;border-radius:50%;cursor:pointer;font-weight:bold;font-size:18px;display:flex;align-items:center;justify-content:center;">&larr;</button>
-                <button onclick="scrollCarousel(1)" style="background:#0E6563;color:#fff;border:none;width:40px;height:40px;border-radius:50%;cursor:pointer;font-weight:bold;font-size:18px;display:flex;align-items:center;justify-content:center;">&rarr;</button>
                 <a href="services/index.html" style="background:#EDF6EE;color:#0E6563;padding:10px 20px;border-radius:20px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;">View All Services &rarr;</a>
             </div>
         </div>
 
-        <!-- Carousel Track -->
-        <div id="bhg-services-carousel" style="display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding-bottom:16px;scrollbar-width:thin;">
+        <!-- Carousel Track (swipe / drag to scroll) -->
+        <div id="bhg-services-carousel" style="display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:16px;scrollbar-width:thin;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:pan-y;">
             
             <!-- Item 1 -->
             <div style="flex:0 0 320px;scroll-snap-align:start;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.06);padding:24px;display:flex;flex-direction:column;justify-content:space-between;border-top:5px solid #0E6563;">
@@ -567,12 +565,54 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     </div>
 </div>
 <script>
-function scrollCarousel(dir) {
-    const track = document.getElementById('bhg-services-carousel');
-    if (track) {
-        track.scrollBy({ left: dir * 344, behavior: 'smooth' });
+(function () {
+    var track = document.getElementById('bhg-services-carousel');
+    if (!track) return;
+
+    var isDown = false;
+    var startX = 0;
+    var startScroll = 0;
+    var dragged = false;
+    var activePointer = null;
+
+    track.addEventListener('pointerdown', function (e) {
+        if (activePointer !== null) return;
+        if (e.pointerType === 'touch') return; // native touch swipe already works
+        activePointer = e.pointerId;
+        isDown = true;
+        dragged = false;
+        startX = e.clientX;
+        startScroll = track.scrollLeft;
+        track.style.cursor = 'grabbing';
+        try { track.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+
+    track.addEventListener('pointermove', function (e) {
+        if (!isDown || e.pointerId !== activePointer) return;
+        var dx = e.clientX - startX;
+        if (Math.abs(dx) > 6) dragged = true;
+        track.scrollLeft = startScroll - dx;
+    });
+
+    function endDrag(e) {
+        if (e.pointerId !== activePointer) return;
+        isDown = false;
+        activePointer = null;
+        track.style.cursor = 'grab';
+        try { track.releasePointerCapture(e.pointerId); } catch (err) {}
     }
-}
+    track.addEventListener('pointerup', endDrag);
+    track.addEventListener('pointercancel', endDrag);
+
+    // Don't navigate when the user dragged instead of clicking.
+    track.addEventListener('click', function (e) {
+        if (dragged) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragged = false;
+        }
+    }, true);
+})();
 </script>
 <div class="elementor-element elementor-element-3445653 e-flex e-con-boxed wpr-particle-no wpr-jarallax-no wpr-parallax-no wpr-sticky-section-no wpr-column-slider-no wpr-equal-height-no e-con e-parent" data-id="3445653" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
 					<div class="e-con-inner">

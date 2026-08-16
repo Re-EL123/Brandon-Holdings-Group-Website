@@ -417,8 +417,12 @@
    function applyIkho(ikho) {
      if (!ikho || typeof ikho !== 'object') return;
      var rows = document.querySelectorAll('form[data-form-id="3180"] .bhg-pay-row');
+     // Only offer "Pay Now" when payments are both enabled AND the gateway has
+     // credentials configured server-side — otherwise the visitor gets a
+     // success message with no payment link.
+     var show = ikho.enabled !== false && ikho.configured !== false;
      if (rows.length) {
-       for (var i = 0; i < rows.length; i++) rows[i].style.display = ikho.enabled === false ? 'none' : '';
+       for (var i = 0; i < rows.length; i++) rows[i].style.display = show ? '' : 'none';
      }
       var amt = document.querySelector('form[data-form-id="3180"] [name="payment_amount"]');
       if (amt && !amt.value && ikho.fee) amt.value = String(ikho.fee).replace(/[^\d.]/g, '');
