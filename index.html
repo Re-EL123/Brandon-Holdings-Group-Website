@@ -586,6 +586,8 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
 
         <!-- Carousel Track (swipe / drag to scroll) -->
         <div id="bhg-services-carousel-wrap" class="bhg-services-carousel-wrap">
+        <button class="bhg-carousel-arrow arrow-left" onclick="swipeCarousel(-1)" aria-label="Previous">&lsaquo;</button>
+        <button class="bhg-carousel-arrow arrow-right" onclick="swipeCarousel(1)" aria-label="Next">&rsaquo;</button>
         <div id="bhg-services-carousel" style="display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:16px;scrollbar-width:thin;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:pan-y;">
             
             <!-- Item 1 -->
@@ -687,14 +689,25 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     .bhg-services-carousel-wrap.can-scroll-left::before { opacity: 1; }
     .bhg-services-carousel-wrap.can-scroll-right::after { opacity: 1; }
     #bhg-services-carousel { scroll-behavior: smooth; }
+    .bhg-carousel-arrow {
+        display: none; position: absolute; top: 50%; transform: translateY(-50%);
+        width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+        background: rgba(14,101,99,.85); color: #fff; font-size: 20px; z-index: 5;
+        align-items: center; justify-content: center; transition: background .2s;
+        box-shadow: 0 2px 10px rgba(0,0,0,.2); -webkit-tap-highlight-color: transparent;
+    }
+    .bhg-carousel-arrow:hover { background: #0E6563; }
+    .bhg-carousel-arrow.arrow-left { left: 8px; }
+    .bhg-carousel-arrow.arrow-right { right: 8px; }
     #bhg-services-carousel > div {
         transition: transform .35s cubic-bezier(.25,.8,.25,1), opacity .35s ease;
     }
     #bhg-services-carousel > div.card-dim { opacity: .55; transform: scale(.96); }
     @media (max-width: 767px) {
         .bhg-services-carousel-wrap::before, .bhg-services-carousel-wrap::after { width: 32px; }
-        #bhg-services-carousel { gap: 16px; padding: 0 16px 16px; }
+        #bhg-services-carousel { gap: 16px; padding: 0 16px 16px; scroll-snap-type: x proximity; }
         #bhg-services-carousel > div { flex: 0 0 calc(100vw - 80px); min-width: 260px; }
+        .bhg-carousel-arrow { display: flex; }
         .elementor-element-3211a19 { padding-top: 80px !important; }
         .elementor-element-1cd09d4 .elementor-heading-title { font-size: 18px !important; }
         .elementor-element-e5163bd { grid-template-columns: 1fr !important; }
@@ -767,7 +780,7 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     updateActiveCard();
 
     /* ── auto-scroll (pauses on hover / touch) ── */
-    var autoTimer = null, autoDir = 1, paused = false;
+    var autoTimer = null, autoDir = 1, paused = false, resumeTimeout = null;
     function autoStep() {
         if (paused) { autoTimer = requestAnimationFrame(autoStep); return; }
         var max = track.scrollWidth - track.clientWidth;
@@ -777,12 +790,14 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
         else if (track.scrollLeft <= 2) autoDir = 1;
         autoTimer = requestAnimationFrame(autoStep);
     }
-    function pauseAuto() { paused = true; }
+    function pauseAuto() { paused = true; if (resumeTimeout) { clearTimeout(resumeTimeout); resumeTimeout = null; } }
     function resumeAuto() { paused = false; }
+    function scheduleResume() { if (resumeTimeout) clearTimeout(resumeTimeout); resumeTimeout = setTimeout(resumeAuto, 2000); }
     wrap.addEventListener('pointerenter', pauseAuto);
     wrap.addEventListener('pointerleave', resumeAuto);
     wrap.addEventListener('pointerdown', pauseAuto);
-    wrap.addEventListener('pointerup', function () { setTimeout(resumeAuto, 2000); });
+    wrap.addEventListener('pointerup', scheduleResume);
+    wrap.addEventListener('pointercancel', scheduleResume);
     autoTimer = requestAnimationFrame(autoStep);
 
     /* ── click left/right third to swipe (desktop) ── */
