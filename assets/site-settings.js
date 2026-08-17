@@ -477,6 +477,7 @@
       '.elementor-icon-list-item a[href^="tel:"],.elementor-icon-list-item a[href^="https://wa.me"]{display:none}' +
       '.elementor-icon-list-item a[href^="tel:"] + .elementor-icon-list-text,.elementor-icon-list-item a[href^="https://wa.me"] + .elementor-icon-list-text{display:none}' +
       'p:has(> a[href^="tel:"]){display:none!important}' +
+      '.elementor-social-icon-whatsapp{display:none!important}' +
       '.bhg-hide-on-mobile{display:none!important}' +
     '}'
   );
@@ -502,7 +503,7 @@
     if (document.getElementById('bhg-cart-widget')) return;
     var div = document.createElement('div');
     div.innerHTML = `
-      <div id="bhg-cart-widget" onclick="openCartModal()" style="position:fixed;bottom:24px;left:24px;background:#0E6563;color:#fff;padding:12px 20px;border-radius:30px;box-shadow:0 6px 24px rgba(0,0,0,.2);cursor:pointer;z-index:99990;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;transition:transform .2s;">
+      <div id="bhg-cart-widget" onclick="openCartModal()" style="position:fixed;bottom:24px;left:24px;background:#0E6563;color:#fff;padding:12px 20px;border-radius:30px;box-shadow:0 6px 24px rgba(0,0,0,.2);cursor:pointer;z-index:99991;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;transition:transform .2s;">
         ${CART_ICON}
         <span>Cart</span>
         <span style="background:#fff;color:#0E6563;padding:2px 8px;border-radius:12px;font-size:12px;" id="floating-cart-count">0</span>
