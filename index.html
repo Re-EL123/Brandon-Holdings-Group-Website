@@ -605,6 +605,8 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     track.addEventListener('pointerdown', function (e) {
         if (activePointer !== null) return;
         if (e.pointerType === 'touch') return;
+        var t = e.target;
+        if (t.closest && t.closest('button, a, input, select, textarea')) return;
         activePointer = e.pointerId;
         isDown = true; dragged = false;
         startX = e.clientX; startScroll = track.scrollLeft;
