@@ -669,6 +669,17 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     wrap.addEventListener('pointerup', function () { setTimeout(resumeAuto, 2000); });
     autoTimer = requestAnimationFrame(autoStep);
 
+    /* ── click left/right third to swipe (desktop) ── */
+    wrap.addEventListener('click', function (e) {
+        if (dragged) return;
+        if (e.pointerType === 'touch' || matchMedia('(pointer:coarse)').matches) return;
+        var rect = wrap.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var w = rect.width;
+        if (x < w * 0.3) swipeCarousel(-1);
+        else if (x > w * 0.7) swipeCarousel(1);
+    });
+
     /* ── swipeCarousel kept for any external callers ── */
     window.swipeCarousel = function (dir) {
         var left = track.scrollLeft, target = null;
