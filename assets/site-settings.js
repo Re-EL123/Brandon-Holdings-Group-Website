@@ -667,7 +667,7 @@
                           </div>
                           <div style="display:flex;align-items:center;gap:12px;">
                               <span style="font-weight:800;color:#0E6563;">R${(item.price * (item.qty || 1)).toLocaleString()}</span>
-                              <button onclick="removeFromCart(${item.id})" style="background:#fee2e2;color:#991b1b;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+                              <button onclick="removeFromCart(${item.id})" style="background:#fecaca;color:#991b1b;border:1px solid #f5c6c6;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;" onmouseover="this.style.background='#f87171';this.style.color='#fff';this.style.borderColor='#f87171'" onmouseout="this.style.background='#fecaca';this.style.color='#991b1b';this.style.borderColor='#f5c6c6'"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                           </div>
                       </div>
                   `;
