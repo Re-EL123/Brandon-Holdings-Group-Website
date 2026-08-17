@@ -469,7 +469,6 @@
     '.bhg-fab-actions .bhg-fab-action:nth-child(2){animation:bhg-fab-in .36s ease-out .06s both}' +
     '@keyframes bhg-fab-bob{0%,100%{transform:translateY(0)}40%{transform:translateY(-10px)}}' +
     '@keyframes bhg-fab-in{from{opacity:0;transform:translateY(14px) scale(.88)}to{opacity:1;transform:none}}' +
-    '.bhg-mobile-cta{display:none!important}' +
     '.bhg-fab{bottom:20px}' +
     '.bhg-geo{margin:16px auto 0;padding:0 20px;font:14px/1.5 Arial,Helvetica,sans-serif;color:#8b96b4;text-align:center}' +
     '.bhg-rbadge{display:inline-flex;align-items:center;gap:8px;margin:0 0 16px;padding:8px 14px;background:#eef6f4;border:1px solid #cfe3de;border-radius:999px;font:600 13px/1.2 Arial,Helvetica,sans-serif;color:#0E6563}' +
