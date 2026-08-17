@@ -527,7 +527,7 @@
         <div style="background:#fff;width:100%;max-width:640px;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:90vh;display:flex;flex-direction:column;">
             <div style="background:#0E6563;color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
                 <h3 style="margin:0;font-size:20px;">Your Selected Services</h3>
-                <button onclick="closeCartModal()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;">&times;</button>
+                <button onclick="closeCartModal()" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;"><i data-lucide="x" style="width:22px;height:22px;"></i></button>
             </div>
             <div style="padding:24px;overflow-y:auto;flex-grow:1;" id="cart-modal-body">
                 <div id="cart-items-list" style="margin-bottom:20px;"></div>
@@ -557,6 +557,7 @@
       </div>
     `;
     document.body.appendChild(div);
+    if (window.lucide) lucide.createIcons();
   }
 
   // Global cart helpers
@@ -666,13 +667,14 @@
                           </div>
                           <div style="display:flex;align-items:center;gap:12px;">
                               <span style="font-weight:800;color:#0E6563;">R${(item.price * (item.qty || 1)).toLocaleString()}</span>
-                              <button onclick="removeFromCart(${item.id})" style="background:#fee2e2;color:#991b1b;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-weight:bold;">&times;</button>
+                              <button onclick="removeFromCart(${item.id})" style="background:#fee2e2;color:#991b1b;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'"><i data-lucide="x" style="width:15px;height:15px;pointer-events:none;"></i></button>
                           </div>
                       </div>
                   `;
               });
           }
           listEl.innerHTML = listHTML;
+          if (window.lucide) lucide.createIcons();
       }
   }
 

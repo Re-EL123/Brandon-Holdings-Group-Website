@@ -318,6 +318,7 @@ Click the help icon above to learn more.
 	<meta name="google-site-verification" content="SAvNsbHXXijdn00CQkNlnRxkRn3OK9q056JdhD386OE" />
 	
 </head>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
 <body itemtype='https://schema.org/WebPage' itemscope='itemscope' class="home wp-singular page-template-default page page-id-1463 wp-custom-logo wp-theme-astra latepoint ehf-footer ehf-template-astra ehf-stylesheet-astra ast-desktop ast-page-builder-template ast-no-sidebar astra-4.11.10 ast-single-post ast-replace-site-logo-transparent ast-inherit-site-logo-transparent ast-theme-transparent-header ast-hfb-header elementor-default elementor-kit-1399 elementor-page elementor-page-1463 directorist-content-active directorist-preload">
 <style id="bhg-loader-css">#bhg-loader{position:fixed;inset:0;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#ffffff}#bhg-loader.done{opacity:0;pointer-events:none;transition:opacity .45s ease}.bhg-logo{max-width:210px;max-height:84px;width:auto;height:auto}.bhg-spin{width:40px;height:40px;border:3px solid rgba(14,101,99,.18);border-top-color:#0E6563;border-radius:50%;animation:bhg-rot .9s linear infinite}.bhg-brand{font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;letter-spacing:.34em;color:#0E6563;text-transform:uppercase}@keyframes bhg-rot{to{transform:rotate(360deg)}}</style>
@@ -563,28 +564,31 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
             </div>
 
         </div>
-        <button type="button" id="bhg-carousel-prev" class="bhg-edge bhg-edge-prev" aria-label="Previous services">&#8249;</button>
-        <button type="button" id="bhg-carousel-next" class="bhg-edge bhg-edge-next" aria-label="Next services">&#8250;</button>
         </div>
     </div>
 </div>
 <style>
     .bhg-services-carousel-wrap { position: relative; }
-    .bhg-edge {
-        position: absolute; top: 50%; transform: translateY(-50%) scale(1);
-        width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
-        background: #0E6563; color: #fff; font-size: 26px; line-height: 1;
-        display: none; align-items: center; justify-content: center;
-        box-shadow: 0 4px 14px rgba(14, 101, 99, .35); z-index: 5;
-        opacity: 0; transition: opacity .25s ease, transform .25s ease, background .25s ease;
+    .bhg-services-carousel-wrap::before,
+    .bhg-services-carousel-wrap::after {
+        content: ''; position: absolute; top: 0; bottom: 16px; width: 60px; z-index: 4;
+        pointer-events: none; transition: opacity .3s;
     }
-    .bhg-edge-prev { left: 4px; }
-    .bhg-edge-next { right: 4px; }
-    .bhg-edge:hover { background: #0a4f4d; transform: translateY(-50%) scale(1.1); }
-    .bhg-edge:active { transform: translateY(-50%) scale(.92); }
-    .bhg-services-carousel-wrap:hover .bhg-edge { opacity: 1; }
-    @media (hover: hover) and (min-width: 768px) {
-        .bhg-edge { display: flex; }
+    .bhg-services-carousel-wrap::before {
+        left: 0; background: linear-gradient(to right, #fff 0%, transparent 100%); opacity: 0;
+    }
+    .bhg-services-carousel-wrap::after {
+        right: 0; background: linear-gradient(to left, #fff 0%, transparent 100%); opacity: 0;
+    }
+    .bhg-services-carousel-wrap.can-scroll-left::before { opacity: 1; }
+    .bhg-services-carousel-wrap.can-scroll-right::after { opacity: 1; }
+    #bhg-services-carousel { scroll-behavior: smooth; }
+    #bhg-services-carousel > div {
+        transition: transform .35s cubic-bezier(.25,.8,.25,1), opacity .35s ease;
+    }
+    #bhg-services-carousel > div.card-dim { opacity: .55; transform: scale(.96); }
+    @media (max-width: 767px) {
+        .bhg-services-carousel-wrap::before, .bhg-services-carousel-wrap::after { width: 32px; }
     }
 </style>
 <script>
@@ -592,76 +596,95 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     var wrap = document.getElementById('bhg-services-carousel-wrap');
     var track = document.getElementById('bhg-services-carousel');
     if (!wrap || !track) return;
+    var cards = [].slice.call(track.children);
+    if (!cards.length) return;
 
-    var isDown = false;
-    var startX = 0;
-    var startScroll = 0;
-    var dragged = false;
-    var activePointer = null;
+    /* ── drag to scroll ── */
+    var isDown = false, startX = 0, startScroll = 0, dragged = false, activePointer = null;
 
     track.addEventListener('pointerdown', function (e) {
         if (activePointer !== null) return;
-        if (e.pointerType === 'touch') return; // native touch swipe already works
+        if (e.pointerType === 'touch') return;
         activePointer = e.pointerId;
-        isDown = true;
-        dragged = false;
-        startX = e.clientX;
-        startScroll = track.scrollLeft;
+        isDown = true; dragged = false;
+        startX = e.clientX; startScroll = track.scrollLeft;
         track.style.cursor = 'grabbing';
         try { track.setPointerCapture(e.pointerId); } catch (err) {}
     });
-
     track.addEventListener('pointermove', function (e) {
         if (!isDown || e.pointerId !== activePointer) return;
         var dx = e.clientX - startX;
         if (Math.abs(dx) > 6) dragged = true;
         track.scrollLeft = startScroll - dx;
     });
-
     function endDrag(e) {
         if (e.pointerId !== activePointer) return;
-        isDown = false;
-        activePointer = null;
+        isDown = false; activePointer = null;
         track.style.cursor = 'grab';
         try { track.releasePointerCapture(e.pointerId); } catch (err) {}
     }
     track.addEventListener('pointerup', endDrag);
     track.addEventListener('pointercancel', endDrag);
-
-    // Don't navigate when the user dragged instead of clicking.
     track.addEventListener('click', function (e) {
-        if (dragged) {
-            e.preventDefault();
-            e.stopPropagation();
-            dragged = false;
-        }
+        if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; }
     }, true);
 
-    // Press the left/right side of the carousel on desktop to swipe that way.
-    function swipeCarousel(dir) {
-        var cards = [].slice.call(track.children);
-        if (!cards.length) return;
-        var left = track.scrollLeft;
-        var target = null;
+    /* ── edge fade gradients ── */
+    function updateEdges() {
+        var sl = track.scrollLeft, max = track.scrollWidth - track.clientWidth;
+        wrap.classList.toggle('can-scroll-left', sl > 10);
+        wrap.classList.toggle('can-scroll-right', sl < max - 10);
+    }
+    track.addEventListener('scroll', updateEdges, { passive: true });
+    updateEdges();
+
+    /* ── active card dim ── */
+    function updateActiveCard() {
+        var sl = track.scrollLeft, cw = track.clientWidth;
+        var mid = sl + cw / 2;
+        cards.forEach(function (c) {
+            var cl = c.offsetLeft, cr = cl + c.offsetWidth;
+            c.classList.toggle('card-dim', mid < cl || mid > cr);
+        });
+    }
+    track.addEventListener('scroll', updateActiveCard, { passive: true });
+    updateActiveCard();
+
+    /* ── auto-scroll (pauses on hover / touch) ── */
+    var autoTimer = null, autoDir = 1, paused = false;
+    function autoStep() {
+        if (paused) { autoTimer = requestAnimationFrame(autoStep); return; }
+        var max = track.scrollWidth - track.clientWidth;
+        if (max <= 0) { autoTimer = requestAnimationFrame(autoStep); return; }
+        track.scrollLeft += autoDir * 1.2;
+        if (track.scrollLeft >= max - 2) autoDir = -1;
+        else if (track.scrollLeft <= 2) autoDir = 1;
+        autoTimer = requestAnimationFrame(autoStep);
+    }
+    function pauseAuto() { paused = true; }
+    function resumeAuto() { paused = false; }
+    wrap.addEventListener('pointerenter', pauseAuto);
+    wrap.addEventListener('pointerleave', resumeAuto);
+    wrap.addEventListener('pointerdown', pauseAuto);
+    wrap.addEventListener('pointerup', function () { setTimeout(resumeAuto, 2000); });
+    autoTimer = requestAnimationFrame(autoStep);
+
+    /* ── swipeCarousel kept for any external callers ── */
+    window.swipeCarousel = function (dir) {
+        var left = track.scrollLeft, target = null;
         if (dir > 0) {
             for (var i = 0; i < cards.length; i++) {
-                var cl = cards[i].offsetLeft;
-                if (cl > left + 8) { target = cl; break; }
+                if (cards[i].offsetLeft > left + 8) { target = cards[i].offsetLeft; break; }
             }
             if (target === null) target = track.scrollWidth - track.clientWidth;
         } else {
             for (var i = cards.length - 1; i >= 0; i--) {
-                var cl = cards[i].offsetLeft;
-                if (cl < left - 8) { target = cl; break; }
+                if (cards[i].offsetLeft < left - 8) { target = cards[i].offsetLeft; break; }
             }
             if (target === null) target = 0;
         }
         track.scrollTo({ left: target, behavior: 'smooth' });
-    }
-    var prev = document.getElementById('bhg-carousel-prev');
-    var next = document.getElementById('bhg-carousel-next');
-    if (prev) prev.addEventListener('click', function () { swipeCarousel(-1); });
-    if (next) next.addEventListener('click', function () { swipeCarousel(1); });
+    };
 })();
 </script>
 <div class="elementor-element elementor-element-3445653 e-flex e-con-boxed wpr-particle-no wpr-jarallax-no wpr-parallax-no wpr-sticky-section-no wpr-column-slider-no wpr-equal-height-no e-con e-parent" data-id="3445653" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
