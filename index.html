@@ -466,7 +466,111 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
 				</div>
 					</div>
 				</div>
-		
+
+<!-- Hero alive animations -->
+<style>
+  .elementor-element-8bcd764 {
+    --bg-x: 0; --bg-y: 0;
+    transition: background-position .15s ease-out;
+  }
+  .elementor-element-8bcd764 .e-con-inner {
+    position: relative; z-index: 2;
+  }
+  .elementor-element-5e9b6ee .elementor-heading-title,
+  .elementor-element-1cd09d4 .elementor-heading-title {
+    transition: transform .35s cubic-bezier(.25,.8,.25,1), text-shadow .35s ease, color .3s ease;
+    display: inline-block;
+  }
+  .elementor-element-5e9b6ee .elementor-heading-title:hover,
+  .elementor-element-1cd09d4 .elementor-heading-title:hover {
+    transform: scale(1.03) translateY(-2px);
+    text-shadow: 0 0 30px rgba(14,101,99,.5), 0 4px 12px rgba(0,0,0,.3);
+  }
+  .elementor-element-1cd09d4 .elementor-heading-title:hover {
+    color: #6ec1e4;
+  }
+  .elementor-element-68cc8a5 p {
+    transition: transform .35s cubic-bezier(.25,.8,.25,1), opacity .3s ease, letter-spacing .3s ease;
+  }
+  .elementor-element-68cc8a5:hover p {
+    transform: translateY(-2px);
+    letter-spacing: .5px;
+    opacity: .9;
+  }
+  .elementor-element-7812852 .elementor-button,
+  .elementor-element-8e77668 .elementor-button {
+    transition: transform .3s cubic-bezier(.25,.8,.25,1), box-shadow .3s ease, background .3s ease, border-color .3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .elementor-element-7812852 .elementor-button:hover {
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 8px 30px rgba(14,101,99,.45), 0 0 20px rgba(14,101,99,.2);
+  }
+  .elementor-element-8e77668 .elementor-button:hover {
+    transform: translateY(-3px) scale(1.04);
+    border-color: #6ec1e4;
+    box-shadow: 0 8px 30px rgba(255,255,255,.15), 0 0 20px rgba(110,193,228,.2);
+    background: rgba(255,255,255,.08);
+  }
+  .elementor-element-7812852 .elementor-button::after,
+  .elementor-element-8e77668 .elementor-button::after {
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(135deg,rgba(255,255,255,.15) 0%,transparent 50%,rgba(255,255,255,.1) 100%);
+    opacity:0;transition:opacity .3s ease;pointer-events:none;
+  }
+  .elementor-element-7812852 .elementor-button:hover::after,
+  .elementor-element-8e77668 .elementor-button:hover::after { opacity:1; }
+
+  .elementor-element-70fdbc1 { position:relative; }
+
+  @media (max-width:767px) {
+    .elementor-element-5e9b6ee .elementor-heading-title:hover,
+    .elementor-element-1cd09d4 .elementor-heading-title:hover { transform: none; }
+  }
+</style>
+<script>
+(function () {
+  var hero = document.querySelector('.elementor-element-8bcd764');
+  if (!hero) return;
+  var inner = hero.querySelector('.e-con-inner');
+  var h1 = hero.querySelector('.elementor-element-5e9b6ee');
+  var sub = hero.querySelector('.elementor-element-1cd09d4');
+  var tag = hero.querySelector('.elementor-element-68cc8a5');
+  var emptyCol = hero.querySelector('.elementor-element-70fdbc1');
+  var raf = null, mx = 0, my = 0;
+
+  function tick() {
+    var rect = hero.getBoundingClientRect();
+    var cx = (mx - rect.left) / rect.width - 0.5;
+    var cy = (my - rect.top) / rect.height - 0.5;
+
+    hero.style.backgroundPosition = 'calc(50% + ' + (cx * -18) + 'px) calc(50% + ' + (cy * -14) + 'px)';
+
+    if (h1) h1.style.transform = 'translate(' + (cx * 6) + 'px,' + (cy * 4) + 'px)';
+    if (sub) sub.style.transform = 'translate(' + (cx * 4) + 'px,' + (cy * 3) + 'px)';
+    if (tag) tag.style.transform = 'translate(' + (cx * 3) + 'px,' + (cy * 2) + 'px)';
+    if (emptyCol) emptyCol.style.transform = 'translate(' + (cx * -10) + 'px,' + (cy * -8) + 'px)';
+
+    raf = null;
+  }
+
+  hero.addEventListener('mousemove', function (e) {
+    mx = e.clientX; my = e.clientY;
+    if (!raf) raf = requestAnimationFrame(tick);
+  });
+  hero.addEventListener('mouseleave', function () {
+    if (raf) cancelAnimationFrame(raf);
+    raf = null;
+    hero.style.backgroundPosition = '';
+    if (h1) h1.style.transform = '';
+    if (sub) sub.style.transform = '';
+    if (tag) tag.style.transform = '';
+    if (emptyCol) emptyCol.style.transform = '';
+  });
+})();
+</script>
+
 <!-- Services Quick Carousel Section -->
 <div style="background:#F8FAFC;padding:60px 20px;border-bottom:1px solid #e2e8f0;position:relative;z-index:10;">
     <div style="max-width:1200px;margin:0 auto;">
