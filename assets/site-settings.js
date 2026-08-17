@@ -218,20 +218,6 @@
     });
   }
 
-  function buildMobileBar() {
-    var body = document.body;
-    if (!body) return;
-    var bar = document.createElement('div');
-    bar.className = 'bhg-mobile-cta';
-    bar.setAttribute('role', 'navigation');
-    bar.innerHTML =
-      '<a class="bhg-cta bhg-cta-call" href="' + telHref(DEFAULTS.phone) + '">' +
-      PHONE_ICON + '<span>Call us</span></a>' +
-      '<a class="bhg-cta bhg-cta-wa" href="' + waLink(DEFAULTS.whatsapp) + '" target="_blank" rel="noopener">' +
-      WA_ICON + '<span>WhatsApp</span></a>';
-    body.appendChild(bar);
-  }
-
   function updateCTAs(contact) {
     if (!contact) return;
     var tel = telHref(contact.phone) || telHref(DEFAULTS.phone);
@@ -483,22 +469,23 @@
     '.bhg-fab-actions .bhg-fab-action:nth-child(2){animation:bhg-fab-in .36s ease-out .06s both}' +
     '@keyframes bhg-fab-bob{0%,100%{transform:translateY(0)}40%{transform:translateY(-10px)}}' +
     '@keyframes bhg-fab-in{from{opacity:0;transform:translateY(14px) scale(.88)}to{opacity:1;transform:none}}' +
-    '.bhg-mobile-cta{position:fixed;left:0;right:0;bottom:0;z-index:99980;display:none}' +
-    '.bhg-mobile-cta .bhg-cta{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 10px;font:600 15px/1 Arial,Helvetica,sans-serif;color:#fff;text-decoration:none;letter-spacing:.02em}' +
-    '.bhg-mobile-cta .bhg-cta svg{width:20px;height:20px;fill:#fff;flex:none}' +
-    '.bhg-mobile-cta .bhg-cta-call{background:#0E6563}' +
-    '.bhg-mobile-cta .bhg-cta-wa{background:#25d366}' +
-    '@media(max-width:767px){.bhg-mobile-cta{display:flex}.bhg-fab{bottom:74px}body{padding-bottom:58px!important}}' +
+    '.bhg-mobile-cta{display:none!important}' +
+    '.bhg-fab{bottom:20px}' +
     '.bhg-geo{margin:16px auto 0;padding:0 20px;font:14px/1.5 Arial,Helvetica,sans-serif;color:#8b96b4;text-align:center}' +
     '.bhg-rbadge{display:inline-flex;align-items:center;gap:8px;margin:0 0 16px;padding:8px 14px;background:#eef6f4;border:1px solid #cfe3de;border-radius:999px;font:600 13px/1.2 Arial,Helvetica,sans-serif;color:#0E6563}' +
-    '.bhg-rbadge svg{width:15px;height:15px;fill:#0E6563;flex:none}'
+    '.bhg-rbadge svg{width:15px;height:15px;fill:#0E6563;flex:none}' +
+    '@media(max-width:767px){' +
+      '.elementor-icon-list-item a[href^="tel:"],.elementor-icon-list-item a[href^="https://wa.me"]{display:none}' +
+      '.elementor-icon-list-item a[href^="tel:"] + .elementor-icon-list-text,.elementor-icon-list-item a[href^="https://wa.me"] + .elementor-icon-list-text{display:none}' +
+      'p:has(> a[href^="tel:"]){display:none!important}' +
+      '.bhg-hide-on-mobile{display:none!important}' +
+    '}'
   );
 
    onReady(function () {
      buildFAB();
     buildGlobalCart();
     updateCartUI();
-     buildMobileBar();
      addResponseBadge();
      animateStats();
      enhanceConsultForm();

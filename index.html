@@ -693,6 +693,17 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     #bhg-services-carousel > div.card-dim { opacity: .55; transform: scale(.96); }
     @media (max-width: 767px) {
         .bhg-services-carousel-wrap::before, .bhg-services-carousel-wrap::after { width: 32px; }
+        #bhg-services-carousel { gap: 16px; padding: 0 16px 16px; }
+        #bhg-services-carousel > div { flex: 0 0 calc(100vw - 80px); min-width: 260px; }
+        .elementor-element-3211a19 { padding-top: 80px !important; }
+        .elementor-element-1cd09d4 .elementor-heading-title { font-size: 18px !important; }
+        .elementor-element-e5163bd { grid-template-columns: 1fr !important; }
+        .elementor-element-8e77668 { margin-left: 0 !important; }
+    }
+    @media (max-width: 480px) {
+        #bhg-services-carousel > div { flex: 0 0 calc(100vw - 56px); min-width: 240px; padding: 18px !important; }
+        #bhg-services-carousel > div h3 { font-size: 17px !important; }
+        #bhg-services-carousel > div div[style*="font-size:24px"] { font-size: 20px !important; }
     }
 </style>
 <script>
@@ -708,13 +719,12 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
 
     track.addEventListener('pointerdown', function (e) {
         if (activePointer !== null) return;
-        if (e.pointerType === 'touch') return;
         var t = e.target;
         if (t.closest && t.closest('button, a, input, select, textarea')) return;
         activePointer = e.pointerId;
         isDown = true; dragged = false;
         startX = e.clientX; startScroll = track.scrollLeft;
-        track.style.cursor = 'grabbing';
+        track.style.cursor = e.pointerType === 'touch' ? '' : 'grabbing';
         try { track.setPointerCapture(e.pointerId); } catch (err) {}
     });
     track.addEventListener('pointermove', function (e) {
@@ -1508,8 +1518,29 @@ var e="script#wp-emoji-settings",t=document.querySelector(e);if(!(t instanceof H
 				}
 			});
 		</script>
-			<script src="assets/selfhosted-forms.js"></script>
-			<script src="assets/site-settings.js?v=5?v=5?v=4"></script>
+		<script src="assets/selfhosted-forms.js"></script>
+		<script src="assets/site-settings.js?v=5?v=5?v=4"></script>
+<style>
+@media (max-width:767px) {
+  .elementor-element-8bcd764 { min-height:auto !important; }
+  .elementor-element-3211a19 { padding-top:90px !important;padding-left:20px !important;padding-right:20px !important; }
+  .elementor-element-5e9b6ee .elementor-heading-title { font-size:28px !important; }
+  .elementor-element-1cd09d4 .elementor-heading-title { font-size:16px !important; }
+  .elementor-element-68cc8a5 p { font-size:15px !important; }
+  .elementor-element-e5163bd { grid-template-columns:1fr !important;gap:10px !important; }
+  .elementor-element-8e77668 { margin-left:0 !important; }
+  .elementor-element-8e77668 .elementor-button { padding:15px 28px !important; }
+  .elementor-element-3445653 { padding-left:16px !important;padding-right:16px !important; }
+  .elementor-element-eeed392 { padding:0 16px !important; }
+  .elementor-element-eeed392 p { font-size:16px !important; }
+  .elementor-element-8304f25 { padding:10px 16px !important; }
+  .elementor-element-b95d948 { flex-direction:column !important; }
+  .elementor-element-4bb197a { width:100% !important; }
+  .elementor-element-e3ece96 { width:100% !important; }
+  .elementor-element-fb80bbd { padding-left:16px !important;padding-right:16px !important; }
+  #bhg-cart-widget { bottom:90px !important;left:16px !important; }
+}
+</style>
 </body>
 </html>
 <!--
