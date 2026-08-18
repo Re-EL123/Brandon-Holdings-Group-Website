@@ -697,7 +697,7 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     }
     @media (max-width: 767px) {
         .bhg-services-carousel-wrap::before, .bhg-services-carousel-wrap::after { width: 32px; }
-        #bhg-services-carousel { gap: 16px; padding: 0 16px 16px; }
+        #bhg-services-carousel { gap: 16px !important; padding: 0 16px 16px !important; touch-action:pan-x !important; scroll-snap-type:x proximity !important; }
         #bhg-services-carousel > div { flex: 0 0 calc(100vw - 80px); min-width: 260px; }
         .elementor-element-3211a19 { padding-top: 80px !important; }
         .elementor-element-1cd09d4 .elementor-heading-title { font-size: 18px !important; }
@@ -734,7 +734,7 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     track.addEventListener('pointermove', function (e) {
         if (!isDown || e.pointerId !== activePointer) return;
         var dx = e.clientX - startX;
-        if (Math.abs(dx) > 6) dragged = true;
+        if (Math.abs(dx) > 10) dragged = true;
         track.scrollLeft = startScroll - dx;
     });
     function endDrag(e) {
