@@ -586,7 +586,7 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
 
         <!-- Carousel Track (swipe / drag to scroll) -->
         <div id="bhg-services-carousel-wrap" class="bhg-services-carousel-wrap">
-        <div id="bhg-services-carousel" style="display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:16px;scrollbar-width:thin;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:pan-y;">
+        <div id="bhg-services-carousel" style="display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:16px;scrollbar-width:thin;cursor:grab;user-select:none;-webkit-user-select:none;">
             
             <!-- Item 1 -->
             <div style="flex:0 0 320px;scroll-snap-align:start;background:rgba(255,255,255,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.6);border-radius:16px;box-shadow:0 8px 32px rgba(14,101,99,.10);padding:24px;display:flex;flex-direction:column;justify-content:space-between;border-top:5px solid #0E6563;">
@@ -722,33 +722,35 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     var isDown = false, startX = 0, startScroll = 0, dragged = false, activePointer = null;
     var isTouch = matchMedia('(pointer:coarse)').matches;
 
-    track.addEventListener('pointerdown', function (e) {
-        if (activePointer !== null) return;
-        var t = e.target;
-        if (t.closest && t.closest('button, a, input, select, textarea')) return;
-        activePointer = e.pointerId;
-        isDown = true; dragged = false;
-        startX = e.clientX; startScroll = track.scrollLeft;
-        if (!isTouch) track.style.cursor = 'grabbing';
-        try { track.setPointerCapture(e.pointerId); } catch (err) {}
-    });
-    track.addEventListener('pointermove', function (e) {
-        if (!isDown || e.pointerId !== activePointer || isTouch) return;
-        var dx = e.clientX - startX;
-        if (Math.abs(dx) > 10) dragged = true;
-        track.scrollLeft = startScroll - dx;
-    });
-    function endDrag(e) {
-        if (e.pointerId !== activePointer) return;
-        isDown = false; activePointer = null;
-        track.style.cursor = 'grab';
-        try { track.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (!isTouch) {
+        track.addEventListener('pointerdown', function (e) {
+            if (activePointer !== null) return;
+            var t = e.target;
+            if (t.closest && t.closest('button, a, input, select, textarea')) return;
+            activePointer = e.pointerId;
+            isDown = true; dragged = false;
+            startX = e.clientX; startScroll = track.scrollLeft;
+            track.style.cursor = 'grabbing';
+            try { track.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        track.addEventListener('pointermove', function (e) {
+            if (!isDown || e.pointerId !== activePointer) return;
+            var dx = e.clientX - startX;
+            if (Math.abs(dx) > 10) dragged = true;
+            track.scrollLeft = startScroll - dx;
+        });
+        function endDrag(e) {
+            if (e.pointerId !== activePointer) return;
+            isDown = false; activePointer = null;
+            track.style.cursor = 'grab';
+            try { track.releasePointerCapture(e.pointerId); } catch (err) {}
+        }
+        track.addEventListener('pointerup', endDrag);
+        track.addEventListener('pointercancel', endDrag);
+        track.addEventListener('click', function (e) {
+            if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; }
+        }, true);
     }
-    track.addEventListener('pointerup', endDrag);
-    track.addEventListener('pointercancel', endDrag);
-    track.addEventListener('click', function (e) {
-        if (!isTouch && dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; }
-    }, true);
 
     /* ── edge fade gradients ── */
     function updateEdges() {
@@ -771,26 +773,28 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     track.addEventListener('scroll', updateActiveCard, { passive: true });
     updateActiveCard();
 
-    /* ── auto-scroll (pauses on hover / touch) ── */
-    var autoTimer = null, autoDir = 1, paused = false, resumeTimeout = null;
-    function autoStep() {
-        if (paused) { autoTimer = requestAnimationFrame(autoStep); return; }
-        var max = track.scrollWidth - track.clientWidth;
-        if (max <= 0) { autoTimer = requestAnimationFrame(autoStep); return; }
-        track.scrollLeft += autoDir * 1.2;
-        if (track.scrollLeft >= max - 2) autoDir = -1;
-        else if (track.scrollLeft <= 2) autoDir = 1;
+    /* ── auto-scroll (desktop only; mobile uses native swipe) ── */
+    if (!isTouch) {
+        var autoTimer = null, autoDir = 1, paused = false, resumeTimeout = null;
+        function autoStep() {
+            if (paused) { autoTimer = requestAnimationFrame(autoStep); return; }
+            var max = track.scrollWidth - track.clientWidth;
+            if (max <= 0) { autoTimer = requestAnimationFrame(autoStep); return; }
+            track.scrollLeft += autoDir * 1.2;
+            if (track.scrollLeft >= max - 2) autoDir = -1;
+            else if (track.scrollLeft <= 2) autoDir = 1;
+            autoTimer = requestAnimationFrame(autoStep);
+        }
+        function pauseAuto() { paused = true; if (resumeTimeout) { clearTimeout(resumeTimeout); resumeTimeout = null; } }
+        function resumeAuto() { paused = false; }
+        function scheduleResume() { if (resumeTimeout) clearTimeout(resumeTimeout); resumeTimeout = setTimeout(resumeAuto, 2000); }
+        wrap.addEventListener('pointerenter', pauseAuto);
+        wrap.addEventListener('pointerleave', resumeAuto);
+        wrap.addEventListener('pointerdown', pauseAuto);
+        wrap.addEventListener('pointerup', scheduleResume);
+        wrap.addEventListener('pointercancel', scheduleResume);
         autoTimer = requestAnimationFrame(autoStep);
     }
-    function pauseAuto() { paused = true; if (resumeTimeout) { clearTimeout(resumeTimeout); resumeTimeout = null; } }
-    function resumeAuto() { paused = false; }
-    function scheduleResume() { if (resumeTimeout) clearTimeout(resumeTimeout); resumeTimeout = setTimeout(resumeAuto, isTouch ? 4000 : 2000); }
-    wrap.addEventListener('pointerenter', pauseAuto);
-    wrap.addEventListener('pointerleave', resumeAuto);
-    wrap.addEventListener('pointerdown', pauseAuto);
-    wrap.addEventListener('pointerup', scheduleResume);
-    wrap.addEventListener('pointercancel', scheduleResume);
-    autoTimer = requestAnimationFrame(autoStep);
 
     /* ── click left/right third to swipe ── */
     wrap.addEventListener('click', function (e) {
