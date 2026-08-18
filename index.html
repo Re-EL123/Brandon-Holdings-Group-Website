@@ -718,8 +718,9 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     var cards = [].slice.call(track.children);
     if (!cards.length) return;
 
-    /* ── drag to scroll ── */
+    /* ── drag to scroll (desktop only; mobile uses native touch) ── */
     var isDown = false, startX = 0, startScroll = 0, dragged = false, activePointer = null;
+    var isTouch = matchMedia('(pointer:coarse)').matches;
 
     track.addEventListener('pointerdown', function (e) {
         if (activePointer !== null) return;
@@ -728,11 +729,11 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
         activePointer = e.pointerId;
         isDown = true; dragged = false;
         startX = e.clientX; startScroll = track.scrollLeft;
-        track.style.cursor = e.pointerType === 'touch' ? '' : 'grabbing';
+        if (!isTouch) track.style.cursor = 'grabbing';
         try { track.setPointerCapture(e.pointerId); } catch (err) {}
     });
     track.addEventListener('pointermove', function (e) {
-        if (!isDown || e.pointerId !== activePointer) return;
+        if (!isDown || e.pointerId !== activePointer || isTouch) return;
         var dx = e.clientX - startX;
         if (Math.abs(dx) > 10) dragged = true;
         track.scrollLeft = startScroll - dx;
@@ -746,7 +747,7 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     track.addEventListener('pointerup', endDrag);
     track.addEventListener('pointercancel', endDrag);
     track.addEventListener('click', function (e) {
-        if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; }
+        if (!isTouch && dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; }
     }, true);
 
     /* ── edge fade gradients ── */
@@ -783,7 +784,7 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
     }
     function pauseAuto() { paused = true; if (resumeTimeout) { clearTimeout(resumeTimeout); resumeTimeout = null; } }
     function resumeAuto() { paused = false; }
-    function scheduleResume() { if (resumeTimeout) clearTimeout(resumeTimeout); resumeTimeout = setTimeout(resumeAuto, 2000); }
+    function scheduleResume() { if (resumeTimeout) clearTimeout(resumeTimeout); resumeTimeout = setTimeout(resumeAuto, isTouch ? 4000 : 2000); }
     wrap.addEventListener('pointerenter', pauseAuto);
     wrap.addEventListener('pointerleave', resumeAuto);
     wrap.addEventListener('pointerdown', pauseAuto);
@@ -793,7 +794,7 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
 
     /* ── click left/right third to swipe ── */
     wrap.addEventListener('click', function (e) {
-        if (dragged) return;
+        if (!isTouch && dragged) return;
         var rect = wrap.getBoundingClientRect();
         var x = e.clientX - rect.left;
         var w = rect.width;
