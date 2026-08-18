@@ -691,6 +691,10 @@ class="post-1463 page type-page status-publish ast-article-single" id="post-1463
         transition: transform .35s cubic-bezier(.25,.8,.25,1), opacity .35s ease;
     }
     #bhg-services-carousel > div.card-dim { opacity: .55; transform: scale(.96); }
+    @media (max-width: 1024px) {
+        #bhg-services-carousel > div { flex: 0 0 280px; min-width: 260px; }
+        #bhg-services-carousel { gap: 20px; }
+    }
     @media (max-width: 767px) {
         .bhg-services-carousel-wrap::before, .bhg-services-carousel-wrap::after { width: 32px; }
         #bhg-services-carousel { gap: 16px; padding: 0 16px 16px; }
@@ -1522,6 +1526,15 @@ var e="script#wp-emoji-settings",t=document.querySelector(e);if(!(t instanceof H
 		<script src="assets/selfhosted-forms.js"></script>
 		<script src="assets/site-settings.js?v=5?v=5?v=4"></script>
 <style>
+@media (max-width:1024px) {
+  .elementor-element-8bcd764 { min-height:80vh !important; }
+  .elementor-element-3211a19 { padding-top:100px !important; }
+  .elementor-element-5e9b6ee .elementor-heading-title { font-size:32px !important; }
+  .elementor-element-1cd09d4 .elementor-heading-title { font-size:17px !important; }
+  .elementor-element-e5163bd { grid-template-columns:repeat(2,1fr) !important; }
+  .elementor-element-b95d948 { flex-direction:row !important;gap:16px !important; }
+  .elementor-element-4bb197a,.elementor-element-e3ece96 { width:auto !important;flex:1 !important; }
+}
 @media (max-width:767px) {
   .elementor-element-8bcd764 { min-height:auto !important; }
   .elementor-element-3211a19 { padding-top:90px !important;padding-left:20px !important;padding-right:20px !important; }

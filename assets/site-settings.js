@@ -479,6 +479,13 @@
       'p:has(> a[href^="tel:"]){display:none!important}' +
       '.elementor-social-icon-whatsapp{display:none!important}' +
       '.bhg-hide-on-mobile{display:none!important}' +
+    '}' +
+    '@media(max-width:1024px){' +
+      '.elementor-icon-list-item a[href^="tel:"],.elementor-icon-list-item a[href^="https://wa.me"]{font-size:14px}' +
+      '.bhg-fab{right:16px;bottom:16px}' +
+      '.bhg-fab-toggle{width:48px;height:48px}' +
+      '#bhg-cart-widget{bottom:16px;left:16px;padding:10px 16px;font-size:13px}' +
+      '.elementor-social-icon-whatsapp{width:36px;height:36px}' +
     '}'
   );
 
