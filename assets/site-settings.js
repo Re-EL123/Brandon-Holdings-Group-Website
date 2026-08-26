@@ -473,6 +473,11 @@
     '.bhg-geo{margin:16px auto 0;padding:0 20px;font:14px/1.5 Arial,Helvetica,sans-serif;color:#8b96b4;text-align:center}' +
     '.bhg-rbadge{display:inline-flex;align-items:center;gap:8px;margin:0 0 16px;padding:8px 14px;background:#eef6f4;border:1px solid #cfe3de;border-radius:999px;font:600 13px/1.2 Arial,Helvetica,sans-serif;color:#0E6563}' +
     '.bhg-rbadge svg{width:15px;height:15px;fill:#0E6563;flex:none}' +
+    '.bhg-nav-cart-item{position:relative}' +
+    '.bhg-nav-cart-item .menu-link{display:inline-flex;align-items:center;gap:0}' +
+    '.bhg-nav-cart-item svg{width:20px;height:20px;stroke:currentColor;fill:none}' +
+    '.bhg-nav-cart-count{position:absolute;top:0;right:-6px;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#0E6563;color:#fff;font-size:11px;font-weight:700;text-align:center;padding:0 5px;pointer-events:none}' +
+    '.bhg-nav-cart-count:empty{display:none}' +
     '@media(max-width:767px){' +
       '.elementor-icon-list-item a[href^="tel:"],.elementor-icon-list-item a[href^="https://wa.me"]{display:none}' +
       '.elementor-icon-list-item a[href^="tel:"] + .elementor-icon-list-text,.elementor-icon-list-item a[href^="https://wa.me"] + .elementor-icon-list-text{display:none}' +
@@ -482,7 +487,6 @@
     '}' +
     '@media(max-width:1024px){' +
       '.elementor-icon-list-item a[href^="tel:"],.elementor-icon-list-item a[href^="https://wa.me"]{font-size:14px}' +
-      '#bhg-cart-widget{bottom:16px;left:16px;padding:10px 16px;font-size:13px}' +
       '.elementor-social-icon-whatsapp{width:36px;height:36px}' +
     '}'
   );
@@ -505,51 +509,57 @@
 
   function buildGlobalCart() {
     window.buildGlobalCart = buildGlobalCart;
-    if (document.getElementById('bhg-cart-widget')) return;
+    if (document.getElementById('bhg-nav-cart')) return;
+
+    // ── Inject cart icon into Astra nav menus ──
+    var cartHTML =
+      '<li id="bhg-nav-cart" class="menu-item bhg-nav-cart-item">' +
+        '<a href="javascript:void(0)" onclick="openCartModal()" class="menu-link" aria-label="Open cart">' +
+          CART_ICON +
+          '<span class="bhg-nav-cart-count" id="nav-cart-count">0</span>' +
+        '</a>' +
+      '</li>';
+
+    var desktopMenu = document.getElementById('ast-hf-menu-1');
+    var mobileMenu = document.getElementById('ast-hf-menu-1-mobile');
+    if (desktopMenu) desktopMenu.insertAdjacentHTML('beforeend', cartHTML);
+    if (mobileMenu) mobileMenu.insertAdjacentHTML('beforeend', cartHTML);
+
+    // ── Cart modal (unchanged) ──
+    if (document.getElementById('bhg-cart-modal')) return;
     var div = document.createElement('div');
-    div.innerHTML = `
-      <div id="bhg-cart-widget" onclick="openCartModal()" style="position:fixed;bottom:24px;left:24px;background:#0E6563;color:#fff;padding:12px 20px;border-radius:30px;box-shadow:0 6px 24px rgba(0,0,0,.2);cursor:pointer;z-index:99991;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;transition:transform .2s;">
-        ${CART_ICON}
-        <span>Cart</span>
-        <span style="background:#fff;color:#0E6563;padding:2px 8px;border-radius:12px;font-size:12px;" id="floating-cart-count">0</span>
-        <span id="floating-cart-total">R0.00</span>
-      </div>
-
-      <div id="bhg-cart-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center;padding:20px;">
-        <div style="background:#fff;width:100%;max-width:640px;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:90vh;display:flex;flex-direction:column;">
-            <div style="background:#0E6563;color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
-                <h3 style="margin:0;font-size:20px;">Your Selected Services</h3>
-                <button onclick="closeCartModal()" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-            </div>
-            <div style="padding:24px;overflow-y:auto;flex-grow:1;" id="cart-modal-body">
-                <div id="cart-items-list" style="margin-bottom:20px;"></div>
-                <div style="border-top:2px solid #eee;padding-top:16px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:800;color:#0F172A;margin-bottom:20px;">
-                    <span>Total:</span>
-                    <span id="cart-modal-total">R0.00</span>
-                </div>
-                
-                <div id="checkout-form-section" style="background:#F8FAFC;padding:20px;border-radius:12px;">
-                    <h4 style="margin:0 0 12px;font-size:16px;color:#0F172A;">Complete Checkout & Pay Now</h4>
-                    <p style="font-size:14px;color:#454F5E;margin-bottom:16px;">Enter your email to receive your secure iKhokha payment link and order confirmation.</p>
-                    <div style="margin-bottom:16px;">
-                        <label style="display:block;font-size:13px;font-weight:700;color:#0F172A;margin-bottom:6px;">Your Email Address *</label>
-                        <input type="email" id="checkout-email" placeholder="name@example.com" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:6px;font-size:15px;" required />
-                    </div>
-                    <button onclick="submitCheckout()" id="checkout-submit-btn" style="width:100%;background:#0E6563;color:#fff;border:none;padding:14px;border-radius:6px;font-weight:700;font-size:16px;cursor:pointer;">Proceed to Pay Now</button>
-                </div>
-
-                <div id="checkout-success-section" style="display:none;background:#EDF6EE;border:1px solid #178E79;padding:20px;border-radius:12px;text-align:center;">
-                    <h4 style="color:#0E6563;margin-top:0;">Payment Request Ready!</h4>
-                    <p id="checkout-success-msg" style="color:#0F172A;font-size:15px;margin-bottom:16px;"></p>
-                    <div id="checkout-link-container" style="margin-bottom:16px;"></div>
-                    <button onclick="clearCartAndClose()" style="background:#454F5E;color:#fff;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;">Close & Reset</button>
-                </div>
-            </div>
-        </div>
-      </div>
-    `;
+    div.innerHTML =
+      '<div id="bhg-cart-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:center;justify-content:center;padding:20px;">' +
+        '<div style="background:#fff;width:100%;max-width:640px;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:90vh;display:flex;flex-direction:column;">' +
+            '<div style="background:#0E6563;color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">' +
+                '<h3 style="margin:0;font-size:20px;">Your Selected Services</h3>' +
+                '<button onclick="closeCartModal()" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>' +
+            '</div>' +
+            '<div style="padding:24px;overflow-y:auto;flex-grow:1;" id="cart-modal-body">' +
+                '<div id="cart-items-list" style="margin-bottom:20px;"></div>' +
+                '<div style="border-top:2px solid #eee;padding-top:16px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:800;color:#0F172A;margin-bottom:20px;">' +
+                    '<span>Total:</span>' +
+                    '<span id="cart-modal-total">R0.00</span>' +
+                '</div>' +
+                '<div id="checkout-form-section" style="background:#F8FAFC;padding:20px;border-radius:12px;">' +
+                    '<h4 style="margin:0 0 12px;font-size:16px;color:#0F172A;">Complete Checkout & Pay Now</h4>' +
+                    '<p style="font-size:14px;color:#454F5E;margin-bottom:16px;">Enter your email to receive your secure iKhokha payment link and order confirmation.</p>' +
+                    '<div style="margin-bottom:16px;">' +
+                        '<label style="display:block;font-size:13px;font-weight:700;color:#0F172A;margin-bottom:6px;">Your Email Address *</label>' +
+                        '<input type="email" id="checkout-email" placeholder="name@example.com" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:6px;font-size:15px;" required />' +
+                    '</div>' +
+                    '<button onclick="submitCheckout()" id="checkout-submit-btn" style="width:100%;background:#0E6563;color:#fff;border:none;padding:14px;border-radius:6px;font-weight:700;font-size:16px;cursor:pointer;">Proceed to Pay Now</button>' +
+                '</div>' +
+                '<div id="checkout-success-section" style="display:none;background:#EDF6EE;border:1px solid #178E79;padding:20px;border-radius:12px;text-align:center;">' +
+                    '<h4 style="color:#0E6563;margin-top:0;">Payment Request Ready!</h4>' +
+                    '<p id="checkout-success-msg" style="color:#0F172A;font-size:15px;margin-bottom:16px;"></p>' +
+                    '<div id="checkout-link-container" style="margin-bottom:16px;"></div>' +
+                    '<button onclick="clearCartAndClose()" style="background:#454F5E;color:#fff;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;">Close & Reset</button>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+      '</div>';
     document.body.appendChild(div);
-    if (window.lucide) lucide.createIcons();
   }
 
   // Global cart helpers
@@ -614,13 +624,11 @@
       const totalQty = window.cart.reduce((sum, item) => sum + (item.qty || 1), 0);
       const totalPrice = window.getCartTotal();
       
-      const fc = document.getElementById('floating-cart-count');
-      const ft = document.getElementById('floating-cart-total');
+      const nc = document.getElementById('nav-cart-count');
       const mt = document.getElementById('cart-modal-total');
       const hc = document.getElementById('hero-cart-count');
       
-      if (fc) fc.innerText = totalQty;
-      if (ft) ft.innerText = 'R' + totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      if (nc) nc.textContent = totalQty || '';
       if (mt) mt.innerText = 'R' + totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
       if (hc) hc.innerText = totalQty;
       
