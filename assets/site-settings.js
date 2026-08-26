@@ -488,7 +488,12 @@
     '@media(max-width:1024px){' +
       '.elementor-icon-list-item a[href^="tel:"],.elementor-icon-list-item a[href^="https://wa.me"]{font-size:14px}' +
       '.elementor-social-icon-whatsapp{width:36px;height:36px}' +
-    '}'
+    '}' +
+    '.main-header-bar{position:sticky;top:0;z-index:9999}' +
+    '#masthead{position:sticky;top:0;z-index:9999}' +
+    '.ast-primary-header-bar{position:sticky;top:0;z-index:9999}' +
+    'header{position:sticky;top:0;z-index:9999}' +
+    'body{padding-top:0!important}'
   );
 
    onReady(function () {
