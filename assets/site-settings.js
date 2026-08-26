@@ -474,7 +474,7 @@
     '.bhg-rbadge{display:inline-flex;align-items:center;gap:8px;margin:0 0 16px;padding:8px 14px;background:#eef6f4;border:1px solid #cfe3de;border-radius:999px;font:600 13px/1.2 Arial,Helvetica,sans-serif;color:#0E6563}' +
     '.bhg-rbadge svg{width:15px;height:15px;fill:#0E6563;flex:none}' +
     '.bhg-nav-cart-item{position:relative}' +
-    '.bhg-nav-cart-item .menu-link{display:inline-flex;align-items:center;gap:0}' +
+    '.bhg-nav-cart-item .menu-link{display:inline-flex;align-items:center;gap:0;position:relative}' +
     '.bhg-nav-cart-item svg{width:20px;height:20px;stroke:currentColor;fill:none}' +
     '.bhg-nav-cart-count{position:absolute;top:0;right:-6px;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#0E6563;color:#fff;font-size:11px;font-weight:700;text-align:center;padding:0 5px;pointer-events:none}' +
     '.bhg-nav-cart-count:empty{display:none}' +
@@ -509,14 +509,14 @@
 
   function buildGlobalCart() {
     window.buildGlobalCart = buildGlobalCart;
-    if (document.getElementById('bhg-nav-cart')) return;
+    if (document.querySelector('.bhg-nav-cart-item')) return;
 
     // ── Inject cart icon into Astra nav menus ──
     var cartHTML =
-      '<li id="bhg-nav-cart" class="menu-item bhg-nav-cart-item">' +
+      '<li class="menu-item bhg-nav-cart-item">' +
         '<a href="javascript:void(0)" onclick="openCartModal()" class="menu-link" aria-label="Open cart">' +
           CART_ICON +
-          '<span class="bhg-nav-cart-count" id="nav-cart-count">0</span>' +
+          '<span class="bhg-nav-cart-count">0</span>' +
         '</a>' +
       '</li>';
 
@@ -624,11 +624,11 @@
       const totalQty = window.cart.reduce((sum, item) => sum + (item.qty || 1), 0);
       const totalPrice = window.getCartTotal();
       
-      const nc = document.getElementById('nav-cart-count');
+      const badges = document.querySelectorAll('.bhg-nav-cart-count');
       const mt = document.getElementById('cart-modal-total');
       const hc = document.getElementById('hero-cart-count');
       
-      if (nc) nc.textContent = totalQty || '';
+      for (var i = 0; i < badges.length; i++) badges[i].textContent = totalQty || '';
       if (mt) mt.innerText = 'R' + totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
       if (hc) hc.innerText = totalQty;
       
