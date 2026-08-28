@@ -1,0 +1,25 @@
+---
+description: Brandon Holdings Group — three-repo map, API wiring, 12-function cap
+alwaysApply: true
+---
+
+# Brandon Holdings Group
+
+Three sibling repos. Treat them as one system.
+
+| Piece | Path | Role |
+|---|---|---|
+| Public site | `/home/akani/Documents/Default Project` | Static clone at brandonholdingsgroup.com |
+| Admin | `/home/akani/Documents/brandonholdingsgroup-admin` | Static panel at admin.brandonholdingsgroup.com |
+| API | `/home/akani/Documents/brandonholdingsgroup-api` | Only component with secrets |
+
+- Site and admin never talk to Firebase. They call `https://brandonholdingsgroup-api-delta.vercel.app`.
+- Site `vercel.json` rewrites `/api/(.*)` to that API. HTML also hardcodes the origin.
+- Admin default base is the same URL (`?api=` or `window.ADMIN_API_BASE` to override). Unlock with the API `ADMIN_TOKEN`.
+- `SITE_ID` is `brandonholdings`. Local self-host: API `SITE_ROOT` = this site folder, port 8080.
+
+## 12 serverless functions — hard cap
+
+Never add a 13th `api/**/*.js` file in the API repo (Vercel Hobby limit; already at 12). New endpoints must reuse or merge an existing function file.
+
+Current functions: `noop`, `contact`, `forminator`, `settings`, `stats`, `blog`, `admin/settings`, `admin/stats`, `admin/payments`, `admin/blog`, `ikhokha/status`, `ikhokha/webhook`.
