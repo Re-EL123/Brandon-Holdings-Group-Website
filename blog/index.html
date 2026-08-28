@@ -220,7 +220,7 @@ img{max-width:100%;height:auto;display:block}
 
 <!-- Article View (hidden by default) -->
 <article class="bhg-article" id="articleView">
-  <a href="#blog" class="bhg-article-back">
+  <a href="#" class="bhg-article-back" id="articleBack">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
     Back to Blog
   </a>
@@ -264,6 +264,7 @@ img{max-width:100%;height:auto;display:block}
         <li><a href="../labour-law/index.html">Labour Law</a></li>
         <li><a href="../consultation/index.html">Consultation</a></li>
         <li><a href="../services/index.html">Services</a></li>
+        <li><a href="index.html">Blog</a></li>
         <li><a href="../contact/index.html">Contact</a></li>
       </ul>
     </div>
@@ -285,7 +286,7 @@ img{max-width:100%;height:auto;display:block}
 (function() {
   'use strict';
 
-  var API_BASE = 'https://brandonholdingsgroup-api-delta.vercel.app';
+  var API_BASE = (window.BHHG_API_BASE || '').replace(/\/+$/, '');
   var SITE_URL = 'https://brandonholdingsgroup.com';
   var DEFAULT_IMG = SITE_URL + '/wp-content/uploads/2025/09/Brandon-Holdings-header-image-1-1.webp';
 
@@ -297,6 +298,7 @@ img{max-width:100%;height:auto;display:block}
 
   var cachedArticles = [];
   var baseTitle = document.title;
+  var hero = document.querySelector('.bhg-hero');
 
   document.getElementById('footerYear').textContent = new Date().getFullYear();
 
@@ -328,13 +330,14 @@ img{max-width:100%;height:auto;display:block}
 
   // ── Render listing ──
   function renderListing() {
-    blogGrid.innerHTML = '';
-    blogGrid.style.display = '';
-    blogComingSoon.style.display = 'none';
+    if (hero) hero.style.display = '';
+    if (blogWrap) blogWrap.style.display = '';
     articleView.style.display = 'none';
+    blogGrid.innerHTML = '';
+    blogGrid.style.display = 'none';
+    blogComingSoon.style.display = 'none';
     document.title = baseTitle;
 
-    // Remove any JSON-LD
     var oldLD = document.getElementById('blog-jsonld');
     if (oldLD) oldLD.remove();
 
@@ -343,25 +346,23 @@ img{max-width:100%;height:auto;display:block}
       return;
     }
 
+    blogGrid.style.display = 'grid';
     cachedArticles.forEach(function(a) {
       var img = a.featured_image || DEFAULT_IMG;
       var date = fmtDate(a.published_at || a.created_at);
       var card = document.createElement('a');
       card.href = '#' + a.slug;
-      card.className = 'bhg-blog-card';
+      card.className = 'bhg-card';
       card.innerHTML =
-        '<div class="bhg-blog-card-img">' +
-          '<img src="' + escHtml(img) + '" alt="' + escHtml(a.title) + '" loading="lazy">' +
-          '<span class="bhg-blog-card-cat">' + escHtml(a.category || 'General') + '</span>' +
-        '</div>' +
-        '<div class="bhg-blog-card-body">' +
-          '<h3 class="bhg-blog-card-title">' + escHtml(a.title) + '</h3>' +
-          '<p class="bhg-blog-card-excerpt">' + escHtml(a.excerpt || '') + '</p>' +
-          '<div class="bhg-blog-card-meta">' +
+        '<img class="bhg-card-img" src="' + escHtml(img) + '" alt="' + escHtml(a.title) + '" loading="lazy">' +
+        '<div class="bhg-card-body">' +
+          '<span class="bhg-card-cat">' + escHtml(a.category || 'General') + '</span>' +
+          '<h3 class="bhg-card-title">' + escHtml(a.title) + '</h3>' +
+          '<p class="bhg-card-excerpt">' + escHtml(a.excerpt || '') + '</p>' +
+          '<div class="bhg-card-meta">' +
             '<span>' + escHtml(date) + '</span>' +
-            '<span>' + escHtml(a.author || 'Brandon Holdings') + '</span>' +
+            '<span class="bhg-card-read">Read more</span>' +
           '</div>' +
-          '<span class="bhg-blog-card-link">Read More →</span>' +
         '</div>';
       blogGrid.appendChild(card);
     });
@@ -369,8 +370,8 @@ img{max-width:100%;height:auto;display:block}
 
   // ── Render article ──
   function renderArticle(article) {
-    blogGrid.style.display = 'none';
-    blogComingSoon.style.display = 'none';
+    if (hero) hero.style.display = 'none';
+    if (blogWrap) blogWrap.style.display = 'none';
     articleView.style.display = 'block';
 
     var img = article.featured_image || DEFAULT_IMG;
@@ -379,7 +380,6 @@ img{max-width:100%;height:auto;display:block}
 
     document.title = article.title + ' – Brandon Holdings Blog';
 
-    // JSON-LD
     var ld = {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
@@ -404,39 +404,30 @@ img{max-width:100%;height:auto;display:block}
     script.textContent = JSON.stringify(ld);
     document.head.appendChild(script);
 
-    var tagsHTML = tags.length
-      ? '<div class="bhg-article-tags">' + tags.map(function(t) {
-          return '<span class="bhg-article-tag">' + escHtml(t) + '</span>';
-        }).join('') + '</div>'
-      : '';
+    var imageEl = document.getElementById('articleImage');
+    imageEl.innerHTML = '<img class="bhg-article-img" src="' + escHtml(img) + '" alt="' + escHtml(article.title) + '">';
+
+    var catEl = document.getElementById('articleCat');
+    catEl.className = 'bhg-article-cat';
+    catEl.textContent = article.category || 'General';
+
+    document.getElementById('articleTitle').textContent = article.title || '';
+    document.getElementById('articleMeta').innerHTML =
+      '<span>' + escHtml(date) + '</span>' +
+      '<span>By ' + escHtml(article.author || 'Brandon Holdings') + '</span>';
+    document.getElementById('articleContent').innerHTML = article.content || '';
+    document.getElementById('articleTags').innerHTML = tags.map(function(t) {
+      return '<span class="bhg-article-tag">' + escHtml(t) + '</span>';
+    }).join('');
 
     var shareUrl = encodeURIComponent(SITE_URL + '/blog/#' + article.slug);
     var shareTitle = encodeURIComponent(article.title);
-
-    articleView.innerHTML =
-      '<div class="bhg-article-hero">' +
-        '<img src="' + escHtml(img) + '" alt="' + escHtml(article.title) + '">' +
-      '</div>' +
-      '<div class="bhg-article-content">' +
-        '<a href="#" class="bhg-article-back">← Back to Blog</a>' +
-        '<div class="bhg-article-cat">' + escHtml(article.category || 'General') + '</div>' +
-        '<h1 class="bhg-article-title">' + escHtml(article.title) + '</h1>' +
-        '<div class="bhg-article-meta">' +
-          '<span>' + escHtml(date) + '</span>' +
-          '<span>By ' + escHtml(article.author || 'Brandon Holdings') + '</span>' +
-        '</div>' +
-        '<div class="bhg-article-body">' + (article.content || '') + '</div>' +
-        tagsHTML +
-        '<div class="bhg-article-share">' +
-          '<span>Share this article:</span>' +
-          '<a href="https://www.facebook.com/sharer/sharer.php?u=' + shareUrl + '" target="_blank" rel="noopener">Facebook</a>' +
-          '<a href="https://www.linkedin.com/sharing/share-offsite/?url=' + shareUrl + '" target="_blank" rel="noopener">LinkedIn</a>' +
-          '<a href="https://twitter.com/intent/tweet?url=' + shareUrl + '&text=' + shareTitle + '" target="_blank" rel="noopener">Twitter</a>' +
-        '</div>' +
-        '<div style="text-align:center;margin-top:40px;">' +
-          '<a href="https://brandonholdingsgroup.com/services/" style="display:inline-block;background:#d4af37;color:#0a0a12;padding:14px 32px;border-radius:8px;font-weight:700;text-decoration:none;">View Our Services</a>' +
-        '</div>' +
-      '</div>';
+    var fb = document.getElementById('shareFacebook');
+    var li = document.getElementById('shareLinkedIn');
+    var tw = document.getElementById('shareTwitter');
+    if (fb) fb.href = 'https://www.facebook.com/sharer/sharer.php?u=' + shareUrl;
+    if (li) li.href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + shareUrl;
+    if (tw) tw.href = 'https://twitter.com/intent/tweet?url=' + shareUrl + '&text=' + shareTitle;
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -451,18 +442,19 @@ img{max-width:100%;height:auto;display:block}
       .then(function(r) { return r.json(); })
       .then(function(d) {
         blogLoading.style.display = 'none';
-        cachedArticles = (d && d.data) || [];
+        cachedArticles = (d && d.success && Array.isArray(d.data)) ? d.data : [];
         handleRoute();
       })
       .catch(function() {
         blogLoading.style.display = 'none';
-        blogComingSoon.style.display = 'block';
+        cachedArticles = [];
+        handleRoute();
       });
   }
 
   // ── Route handling ──
   function handleRoute() {
-    var hash = location.hash.replace(/^#\/?/, '');
+    var hash = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
     if (hash) {
       // Try cache first
       var cached = cachedArticles.find(function(a) { return a.slug === hash; });
@@ -492,11 +484,20 @@ img{max-width:100%;height:auto;display:block}
     }
   }
 
+  var back = document.getElementById('articleBack');
+  if (back) {
+    back.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (location.hash) location.hash = '';
+      else renderListing();
+    });
+  }
+
   window.addEventListener('hashchange', handleRoute);
   loadArticles();
 })();
 </script>
 
-<script src="../assets/site-settings.js?v=5"></script>
+<script src="../assets/site-settings.js?v=6"></script>
 </body>
 </html>

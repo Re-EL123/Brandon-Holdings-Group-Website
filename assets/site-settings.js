@@ -489,14 +489,51 @@
       '.elementor-icon-list-item a[href^="tel:"],.elementor-icon-list-item a[href^="https://wa.me"]{font-size:14px}' +
       '.elementor-social-icon-whatsapp{width:36px;height:36px}' +
     '}' +
-    '.main-header-bar{position:sticky;top:0;z-index:9999}' +
-    '#masthead{position:sticky;top:0;z-index:9999}' +
-    '.ast-primary-header-bar{position:sticky;top:0;z-index:9999}' +
-    'header{position:sticky;top:0;z-index:9999}' +
-    'body{padding-top:0!important}'
+    'html,body,#page,.site{overflow-x:clip!important}' +
+    '#masthead{position:fixed!important;top:0;left:0;right:0;width:100%;z-index:99999;background:#fff;box-shadow:0 1px 0 rgba(15,23,42,.1)}' +
+    '#bhg-header-spacer{display:block;width:100%;flex:none;pointer-events:none}'
   );
 
+  function pinNav() {
+    var header = document.getElementById('masthead');
+    if (!header || document.getElementById('bhg-header-spacer')) return;
+    var spacer = document.createElement('div');
+    spacer.id = 'bhg-header-spacer';
+    function sync() {
+      spacer.style.height = header.getBoundingClientRect().height + 'px';
+    }
+    header.parentNode.insertBefore(spacer, header.nextSibling);
+    sync();
+    window.addEventListener('resize', sync);
+  }
+
+  function injectBlogNav() {
+    if (document.querySelector('.bhg-nav-blog-item')) return;
+    var segs = location.pathname.replace(/index\.html$/, '').split('/').filter(Boolean);
+    var href = (segs.length ? segs.map(function () { return '..'; }).join('/') + '/' : '') + 'blog/';
+    function add(menu) {
+      if (!menu) return;
+      var li = document.createElement('li');
+      li.className = 'menu-item bhg-nav-blog-item';
+      var a = document.createElement('a');
+      a.className = 'menu-link';
+      a.href = href;
+      a.textContent = 'Blog';
+      li.appendChild(a);
+      var contact = menu.querySelector('a[href*="contact"]');
+      if (contact && contact.parentNode && contact.parentNode.parentNode) {
+        contact.parentNode.parentNode.insertBefore(li, contact.parentNode);
+      } else {
+        menu.appendChild(li);
+      }
+    }
+    add(document.getElementById('ast-hf-menu-1'));
+    add(document.getElementById('ast-hf-menu-1-mobile'));
+  }
+
    onReady(function () {
+     pinNav();
+     injectBlogNav();
      buildFAB();
     buildGlobalCart();
     updateCartUI();
