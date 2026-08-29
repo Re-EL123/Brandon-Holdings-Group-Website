@@ -489,22 +489,18 @@
       '.elementor-icon-list-item a[href^="tel:"],.elementor-icon-list-item a[href^="https://wa.me"]{font-size:14px}' +
       '.elementor-social-icon-whatsapp{width:36px;height:36px}' +
     '}' +
-    'html,body,#page,.site{overflow-x:clip!important}' +
-    '#masthead{position:fixed!important;top:0;left:0;right:0;width:100%;z-index:99999;background:#fff;box-shadow:0 1px 0 rgba(15,23,42,.1)}' +
-    '#bhg-header-spacer{display:block;width:100%;flex:none;pointer-events:none}'
+    '#masthead{position:fixed!important;top:0;left:0;right:0;width:100%;z-index:99999;background:rgba(10,10,18,.94);box-shadow:0 8px 24px rgba(0,0,0,.22);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}' +
+    '#masthead .main-header-bar,#masthead .ast-primary-header-bar{background:transparent!important}' +
+    '#masthead .menu-link,#masthead .menu-link:hover,#masthead .menu-link:focus{color:#fff!important}' +
+    '#masthead .ast-button-wrap,#masthead .menu-toggle,#masthead .ast-mobile-menu-buttons{color:#fff!important}' +
+    '#masthead .ast-mobile-svg{fill:#fff!important}'
   );
 
   function pinNav() {
     var header = document.getElementById('masthead');
-    if (!header || document.getElementById('bhg-header-spacer')) return;
-    var spacer = document.createElement('div');
-    spacer.id = 'bhg-header-spacer';
-    function sync() {
-      spacer.style.height = header.getBoundingClientRect().height + 'px';
-    }
-    header.parentNode.insertBefore(spacer, header.nextSibling);
-    sync();
-    window.addEventListener('resize', sync);
+    if (!header) return;
+    var leftover = document.getElementById('bhg-header-spacer');
+    if (leftover && leftover.parentNode) leftover.parentNode.removeChild(leftover);
   }
 
   function injectBlogNav() {
