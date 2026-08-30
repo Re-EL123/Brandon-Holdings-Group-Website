@@ -545,7 +545,7 @@
     var prefix = segs.length ? segs.map(function () { return '..'; }).join('/') + '/' : '';
     var s = document.createElement('script');
     s.id = 'bhg-ai-widget-src';
-    s.src = prefix + 'assets/ai-widget.js?v=5';
+    s.src = prefix + 'assets/ai-widget.js?v=6';
     s.defer = true;
     document.head.appendChild(s);
   }
@@ -626,7 +626,95 @@
   }
 
   // Global cart helpers
+  window.BHG_CATALOG = {
+    1: { name: 'Virtual Business Consultation', price: 499.99, step: 1, isTier: false },
+    2: { name: 'Business Plan & Documentation', price: 1750.00, step: 2, isTier: false },
+    3: { name: 'Business Systems & Support', price: 7750.00, step: 3, isTier: false },
+    4: { name: 'Bronze Advisory (Monthly)', price: 2250.00, step: 4, isTier: true },
+    5: { name: 'Silver Advisory (Monthly)', price: 4500.00, step: 5, isTier: true },
+    6: { name: 'Gold Advisory (Monthly)', price: 7500.00, step: 6, isTier: true }
+  };
+
   window.cart = JSON.parse(localStorage.getItem('bhg_cart') || '[]');
+
+  window.BHG_cartSnapshot = function() {
+      var items = (window.cart || []).map(function(it) {
+          return {
+              id: it.id,
+              name: it.name,
+              price: it.price,
+              qty: it.qty || 1,
+              step: it.step,
+              isTier: !!it.isTier
+          };
+      });
+      return { items: items, total: window.getCartTotal() };
+  };
+
+  window.BHG_addService = function(id) {
+      id = parseInt(id, 10);
+      var cat = window.BHG_CATALOG[id];
+      if (!cat) return Object.assign({ ok: false, error: 'Unknown service', added: [] }, window.BHG_cartSnapshot());
+      var needed = [];
+      if (id >= 2) needed.push(1);
+      if (id >= 3) needed.push(2);
+      if (id >= 4) needed.push(3);
+      needed.push(id);
+      var added = [];
+      for (var i = 0; i < needed.length; i++) {
+          var sid = needed[i];
+          var c = window.BHG_CATALOG[sid];
+          var existing = window.cart.find(function(item) { return item.id === sid; });
+          if (existing) {
+              if (sid === id) existing.qty = (existing.qty || 1) + 1;
+              continue;
+          }
+          window.cart.push({ id: sid, name: c.name, price: c.price, qty: 1, step: c.step, isTier: !!c.isTier });
+          added.push({ id: sid, name: c.name, price: c.price });
+      }
+      window.saveCart();
+      return Object.assign({ ok: true, added: added }, window.BHG_cartSnapshot());
+  };
+
+  window.BHG_removeService = function(id) {
+      window.removeFromCart(parseInt(id, 10));
+      return Object.assign({ ok: true }, window.BHG_cartSnapshot());
+  };
+
+  window.BHG_checkoutCart = async function(email) {
+      email = String(email || '').trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+          return { ok: false, error: 'Please enter a valid email address to receive your payment link.' };
+      }
+      if (!window.cart || !window.cart.length) {
+          return { ok: false, error: 'Your cart is empty. Add a service first.' };
+      }
+      var totalAmount = window.getCartTotal().toFixed(2);
+      var apiBase = window.BHHG_API_BASE || 'https://brandonholdingsgroup-api-delta.vercel.app';
+      var fd = new FormData();
+      fd.append('form_id', 'services-checkout');
+      fd.append('email', email);
+      fd.append('total', totalAmount);
+      fd.append('cart_items', JSON.stringify(window.cart));
+      var res = await fetch(apiBase + '/api/forminator', {
+          method: 'POST',
+          body: fd,
+          mode: 'cors',
+          credentials: 'omit'
+      });
+      var data = await res.json();
+      var pay = data && data.data && data.data.payment;
+      if (pay && pay.link) {
+          return { ok: true, total: totalAmount, email: email, payment: pay, message: data.message || '' };
+      }
+      return {
+          ok: false,
+          total: totalAmount,
+          email: email,
+          payment: pay || null,
+          error: (pay && pay.error) || (data && data.message) || 'Payment link could not be created. Please try the cart or contact us.'
+      };
+  };
 
   window.saveCart = function() {
       localStorage.setItem('bhg_cart', JSON.stringify(window.cart));
@@ -754,54 +842,40 @@
 
   window.submitCheckout = async function() {
       const emailInput = document.getElementById('checkout-email').value.trim();
-      if (!emailInput || !emailInput.includes('@')) {
-          alert('Please enter a valid email address to receive your payment link and confirmation.');
-          return;
-      }
-      if (window.cart.length === 0) {
-          alert('Your cart is empty.');
-          return;
-      }
-
       const btn = document.getElementById('checkout-submit-btn');
       btn.innerText = 'Processing Order...';
       btn.disabled = true;
 
-      const totalAmount = window.getCartTotal().toFixed(2);
-      const apiBase = window.BHHG_API_BASE || 'https://brandonholdingsgroup-api-delta.vercel.app';
-
-      const fd = new FormData();
-      fd.append('form_id', 'services-checkout');
-      fd.append('email', emailInput);
-      fd.append('total', totalAmount);
-      fd.append('cart_items', JSON.stringify(window.cart));
-
       try {
-          const res = await fetch(apiBase + '/api/forminator', {
-              method: 'POST',
-              body: fd
-          });
-          const data = await res.json();
-          
+          const result = await window.BHG_checkoutCart(emailInput);
+          if (!result.ok && !(result.payment && (result.payment.link || result.payment.error))) {
+              alert(result.error || 'Checkout error.');
+              btn.innerText = 'Proceed to Pay Now';
+              btn.disabled = false;
+              return;
+          }
+
+          const totalAmount = result.total || window.getCartTotal().toFixed(2);
           const formSec = document.getElementById('checkout-form-section');
           if (formSec) formSec.style.display = 'none';
           const succSec = document.getElementById('checkout-success-section');
           if (succSec) succSec.style.display = 'block';
 
-          let msg = 'Your order total is <strong>R ' + totalAmount + '</strong>. A confirmation email with your payment link has been sent to <strong>' + emailInput + '</strong>.';
+          let msg = 'Your order total is <strong>R ' + totalAmount + '</strong>. A confirmation email with your payment link has been sent to <strong>' + escHtml(emailInput) + '</strong>.';
           let linkHTML = '';
+          const pay = result.payment;
 
-          if (data && data.data && data.data.payment && data.data.payment.link) {
-              const link = data.data.payment.link;
+          if (pay && pay.link) {
+              const link = pay.link;
               linkHTML = `
                   <div style="background:#fff;padding:16px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:16px;">
                       <p style="margin:0 0 10px;font-weight:700;color:#0F172A;">Direct Payment Link:</p>
-                      <a href="${link}" target="_blank" style="display:inline-block;background:#0E6563;color:#fff;padding:12px 24px;border-radius:6px;font-weight:700;text-decoration:none;margin-bottom:8px;">Pay Now via iKhokha (R ${totalAmount})</a>
-                      <div style="font-size:12px;color:#64748b;word-break:break-all;">${link}</div>
+                      <a href="${escHtml(link)}" target="_blank" rel="noopener" style="display:inline-block;background:#0E6563;color:#fff;padding:12px 24px;border-radius:6px;font-weight:700;text-decoration:none;margin-bottom:8px;">Pay Now via iKhokha (R ${escHtml(String(totalAmount))})</a>
+                      <div style="font-size:12px;color:#64748b;word-break:break-all;">${escHtml(link)}</div>
                   </div>
               `;
-          } else if (data.data.payment && data.data.payment.error) {
-              linkHTML = '<p style="color:#b5451f;">Payment link could not be created: ' + escHtml(data.data.payment.error) + '</p>';
+          } else if (pay && pay.error) {
+              linkHTML = '<p style="color:#b5451f;">Payment link could not be created: ' + escHtml(pay.error) + '</p>';
           } else {
               linkHTML = '<p style="color:#d97706;">Payment gateway link is currently disabled or unconfigured in admin settings. Please contact support.</p>';
           }

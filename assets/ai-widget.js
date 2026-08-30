@@ -10,7 +10,8 @@
       ? ''
       : 'https://brandonholdingsgroup-api-delta.vercel.app') + '/api/ai';
   var SID_KEY = 'bhhg_ai_sid';
-  var welcome = 'Hi — I am the Brandon Holdings Group assistant. Ask about our services, fees, or how to book a consultation.';
+  var EMAIL_KEY = 'bhhg_ai_email';
+  var welcome = 'Hi — I am the Brandon Holdings Group assistant. Ask about our services, add one to your cart, and check out here.';
   var enabled = true;
   var busy = false;
   var root;
@@ -18,6 +19,18 @@
   var log;
   var send;
   var greeted = false;
+  var FALLBACK_CATALOG = {
+    1: { name: 'Virtual Business Consultation', price: 499.99 },
+    2: { name: 'Business Plan & Documentation', price: 1750 },
+    3: { name: 'Business Systems & Support', price: 7750 },
+    4: { name: 'Bronze Advisory (Monthly)', price: 2250 },
+    5: { name: 'Silver Advisory (Monthly)', price: 4500 },
+    6: { name: 'Gold Advisory (Monthly)', price: 7500 }
+  };
+
+  function catalog() {
+    return window.BHG_CATALOG || FALLBACK_CATALOG;
+  }
 
   function sessionId() {
     try {
@@ -32,10 +45,35 @@
     }
   }
 
+  function savedEmail(next) {
+    try {
+      if (arguments.length) {
+        localStorage.setItem(EMAIL_KEY, String(next || ''));
+        return String(next || '');
+      }
+      return localStorage.getItem(EMAIL_KEY) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   function contactHref() {
     var segs = location.pathname.replace(/index\.html$/, '').split('/').filter(Boolean);
     var prefix = segs.length ? segs.map(function () { return '..'; }).join('/') + '/' : '';
     return prefix + 'contact/';
+  }
+
+  function money(n) {
+    return 'R' + Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function cartPayload() {
+    if (typeof window.BHG_cartSnapshot === 'function') {
+      return window.BHG_cartSnapshot().items.map(function (it) {
+        return { id: it.id, qty: it.qty || 1 };
+      });
+    }
+    return [];
   }
 
   function el(html) {
@@ -78,6 +116,20 @@
       '@keyframes bhg-ai-dot{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-5px);opacity:1}}' +
       '@keyframes bhg-ai-ellipsis{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}' +
       '@media(prefers-reduced-motion:reduce){.bhg-ai-dots span,.bhg-ai-think-label:after{animation:none}.bhg-ai-dots span{opacity:.7}.bhg-ai-think-label:after{content:"…"}}' +
+      '.bhg-ai-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;max-width:100%;position:sticky;top:0;background:#f6f8fb;z-index:1;padding:0 0 8px}' +
+      '.bhg-ai-chip{background:#fff;border:1px solid #cfe3de;color:#0E6563;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}' +
+      '.bhg-ai-chip:hover{background:#edf6f4}' +
+      '.bhg-ai-cart{white-space:normal;width:100%;max-width:100%;box-sizing:border-box}' +
+      '.bhg-ai-cart h4{margin:0 0 8px;font-size:13px;color:#0E6563}' +
+      '.bhg-ai-cart-line{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid #edf2f1}' +
+      '.bhg-ai-cart-line button{background:transparent;border:0;color:#991b1b;cursor:pointer;font-size:16px;line-height:1}' +
+      '.bhg-ai-cart-total{display:flex;justify-content:space-between;font-weight:800;margin:8px 0 10px;color:#0E6563}' +
+      '.bhg-ai-cart-email{width:100%;box-sizing:border-box;border:1px solid #cfe3de;border-radius:8px;padding:8px 10px;font:13px Arial,Helvetica,sans-serif;margin:0 0 8px}' +
+      '.bhg-ai-cart-email:focus{outline:2px solid #0E6563;outline-offset:-1px}' +
+      '.bhg-ai-cart-pay{background:#0E6563;color:#fff;border:0;border-radius:8px;padding:10px 12px;font-weight:700;cursor:pointer;width:100%}' +
+      '.bhg-ai-cart-pay[disabled]{opacity:.6;cursor:progress}' +
+      '.bhg-ai-cart-note{margin:8px 0 0;font-size:12px;color:#64748b}' +
+      '.bhg-ai-paylink{display:block;margin-top:8px;background:#0E6563;color:#fff!important;text-align:center;padding:10px;border-radius:8px;font-weight:700;text-decoration:none}' +
       '@media(max-width:767px){#bhg-ai{right:12px;left:12px;bottom:100px}#bhg-ai-panel{width:auto;height:min(70vh,560px)}}';
     document.head.appendChild(s);
   }
@@ -89,6 +141,7 @@
     node.textContent = text;
     log.appendChild(node);
     log.scrollTop = log.scrollHeight;
+    return node;
   }
 
   function showThinking() {
@@ -112,10 +165,233 @@
     if (n && n.parentNode) n.parentNode.removeChild(n);
   }
 
+  function inferActions(text) {
+    var t = String(text || '').toLowerCase();
+    var snap = typeof window.BHG_cartSnapshot === 'function' ? window.BHG_cartSnapshot() : { items: [] };
+    var actions = [];
+    var em = String(text || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    if (/\b(check\s*out|pay now|proceed to pay|complete (my |the )?(order|purchase|payment))\b/.test(t) && snap.items.length) {
+      actions.push({ type: 'checkout', email: em ? em[0] : savedEmail() });
+      return actions;
+    }
+    var wants = /\b(add(ing)? (to )?(my |the )?cart|buy|purchase|book|order|get me|i'll take|put .{0,24} in (my |the )?cart)\b/.test(t)
+      || /\bi (want|need) (a |an |the )?(virtual |business )?(consult|plan|system|bronze|silver|gold)/.test(t)
+      || /\bi (want|need) (to )?(buy|add|book|order|get)\b/.test(t);
+    if (!wants) return actions;
+    var id = 0;
+    if (/\bgold\b/.test(t)) id = 6;
+    else if (/\bsilver\b/.test(t)) id = 5;
+    else if (/\bbronze\b/.test(t)) id = 4;
+    else if (/\b(systems?|step\s*3)\b/.test(t)) id = 3;
+    else if (/\b(business plan|documentation|step\s*2)\b/.test(t)) id = 2;
+    else if (/\b(consult|step\s*1)\b/.test(t)) id = 1;
+    if (id) actions.push({ type: 'addToCart', id: id });
+    return actions;
+  }
+
+  function applyActions(actions, userText) {
+    var list = Array.isArray(actions) ? actions.slice() : [];
+    if (!list.length) list = inferActions(userText);
+    var show = false;
+    var checkoutEmail = '';
+    var doCheckout = false;
+    var addedNames = [];
+    var i;
+    for (i = 0; i < list.length; i++) {
+      var a = list[i] || {};
+      var t = a.type || a.tool;
+      if (t === 'addToCart' && typeof window.BHG_addService === 'function') {
+        var before = window.BHG_addService(a.id);
+        if (before && before.added) {
+          for (var n = 0; n < before.added.length; n++) addedNames.push(before.added[n].name);
+        }
+        show = true;
+      }
+      if (t === 'removeFromCart' && typeof window.BHG_removeService === 'function') {
+        window.BHG_removeService(a.id);
+        show = true;
+      }
+      if (t === 'showCart') show = true;
+      if (t === 'checkout') {
+        show = true;
+        doCheckout = true;
+        checkoutEmail = String(a.email || '').trim();
+        if (checkoutEmail) savedEmail(checkoutEmail);
+      }
+    }
+    if (show) renderCartCard({ autoPay: doCheckout && !!checkoutEmail, email: checkoutEmail || savedEmail() });
+    return { addedNames: addedNames, checkout: doCheckout };
+  }
+
+  function renderCartCard(opts) {
+    opts = opts || {};
+    if (!log) return;
+    var snap = typeof window.BHG_cartSnapshot === 'function' ? window.BHG_cartSnapshot() : { items: [], total: 0 };
+    var existing = log.querySelector('.bhg-ai-cart');
+    var card = existing || document.createElement('div');
+    card.className = 'bhg-ai-msg bot bhg-ai-cart';
+    card.innerHTML = '';
+    var title = document.createElement('h4');
+    title.textContent = 'Your cart';
+    card.appendChild(title);
+
+    if (!snap.items.length) {
+      var empty = document.createElement('p');
+      empty.className = 'bhg-ai-cart-note';
+      empty.textContent = 'Your cart is empty. Choose a service above or tell me which one you want.';
+      card.appendChild(empty);
+    } else {
+      snap.items.forEach(function (it) {
+        var line = document.createElement('div');
+        line.className = 'bhg-ai-cart-line';
+        var left = document.createElement('div');
+        left.textContent = it.name + (it.qty > 1 ? ' ×' + it.qty : '');
+        var right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.alignItems = 'center';
+        right.style.gap = '8px';
+        var price = document.createElement('span');
+        price.textContent = money(it.price * (it.qty || 1));
+        var rm = document.createElement('button');
+        rm.type = 'button';
+        rm.setAttribute('aria-label', 'Remove ' + it.name);
+        rm.textContent = '×';
+        rm.addEventListener('click', function () {
+          if (typeof window.BHG_removeService === 'function') window.BHG_removeService(it.id);
+          renderCartCard({ email: savedEmail() });
+        });
+        right.appendChild(price);
+        right.appendChild(rm);
+        line.appendChild(left);
+        line.appendChild(right);
+        card.appendChild(line);
+      });
+      var tot = document.createElement('div');
+      tot.className = 'bhg-ai-cart-total';
+      tot.innerHTML = '<span>Total</span><span></span>';
+      tot.lastChild.textContent = money(snap.total);
+      card.appendChild(tot);
+
+      var email = document.createElement('input');
+      email.className = 'bhg-ai-cart-email';
+      email.type = 'email';
+      email.autocomplete = 'email';
+      email.placeholder = 'Email for the payment link';
+      email.setAttribute('aria-label', 'Email for the payment link');
+      email.value = opts.email || savedEmail();
+      card.appendChild(email);
+
+      var pay = document.createElement('button');
+      pay.type = 'button';
+      pay.className = 'bhg-ai-cart-pay';
+      pay.textContent = 'Pay now via iKhokha';
+      pay.addEventListener('click', function () {
+        startCheckout(card, email.value, pay);
+      });
+      card.appendChild(pay);
+
+      var note = document.createElement('p');
+      note.className = 'bhg-ai-cart-note';
+      note.textContent = 'We never ask for card details in chat. iKhokha opens in a new tab.';
+      card.appendChild(note);
+    }
+
+    if (!existing) log.appendChild(card);
+    log.scrollTop = log.scrollHeight;
+    if (opts.autoPay && snap.items.length) {
+      var btn = card.querySelector('.bhg-ai-cart-pay');
+      var field = card.querySelector('.bhg-ai-cart-email');
+      startCheckout(card, (field && field.value) || opts.email, btn);
+    }
+  }
+
+  function startCheckout(card, email, btn) {
+    if (typeof window.BHG_checkoutCart !== 'function') {
+      addMsg('sys', 'Checkout is not available on this page. Open the cart from the menu.');
+      return;
+    }
+    savedEmail(email);
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Creating payment link…';
+    }
+    window.BHG_checkoutCart(email)
+      .then(function (result) {
+        var oldLink = card.querySelector('.bhg-ai-paylink');
+        if (oldLink) oldLink.parentNode.removeChild(oldLink);
+        var oldErr = card.querySelector('.bhg-ai-cart-err');
+        if (oldErr) oldErr.parentNode.removeChild(oldErr);
+        if (result && result.ok && result.payment && result.payment.link) {
+          var a = document.createElement('a');
+          a.className = 'bhg-ai-paylink';
+          a.href = result.payment.link;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = 'Complete payment (' + money(result.total) + ')';
+          card.appendChild(a);
+          addMsg('bot', 'Your payment link is ready. A copy was also emailed to ' + result.email + '.');
+        } else {
+          var err = document.createElement('p');
+          err.className = 'bhg-ai-cart-note bhg-ai-cart-err';
+          err.style.color = '#991b1b';
+          err.textContent = (result && result.error) || 'Could not create a payment link. Try the cart in the menu, or WhatsApp.';
+          card.appendChild(err);
+        }
+        log.scrollTop = log.scrollHeight;
+      })
+      .catch(function () {
+        addMsg('bot', 'Checkout failed just now. Please use the cart in the menu or WhatsApp.');
+      })
+      .then(function () {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Pay now via iKhokha';
+        }
+      });
+  }
+
+  function addServiceChips() {
+    if (!log || log.querySelector('.bhg-ai-chips')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'bhg-ai-chips';
+    var cat = catalog();
+    [1, 2, 3, 4, 5, 6].forEach(function (id) {
+      var row = cat[id];
+      if (!row) return;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'bhg-ai-chip';
+      b.textContent = row.name.replace(' (Monthly)', '') + ' ' + money(row.price);
+      b.addEventListener('click', function () {
+        if (busy) return;
+        addFromChip(id);
+      });
+      wrap.appendChild(b);
+    });
+    log.appendChild(wrap);
+  }
+
+  function addFromChip(id) {
+    var cat = catalog()[id];
+    if (!cat) return;
+    addMsg('me', 'Add ' + cat.name);
+    if (typeof window.BHG_addService !== 'function') {
+      addMsg('bot', 'I could not reach the cart on this page. Please use the Services page.');
+      return;
+    }
+    var result = window.BHG_addService(id);
+    var extra = result.added && result.added.length > 1
+      ? ' I also added the required earlier steps so this service can be purchased.'
+      : '';
+    addMsg('bot', 'Added ' + cat.name + ' (' + money(cat.price) + ').' + extra + ' Enter your email below to get an iKhokha payment link.');
+    renderCartCard({ email: savedEmail() });
+  }
+
   function greet() {
     if (greeted) return;
     greeted = true;
     addMsg('bot', welcome);
+    addServiceChips();
   }
 
   function openChat() {
@@ -137,7 +413,7 @@
       '<div id="bhg-ai">' +
         '<div id="bhg-ai-panel" role="dialog" aria-label="Chat with Brandon Holdings Group">' +
           '<div id="bhg-ai-head">' +
-            '<div><strong>Brandon Holdings</strong><span>Ask about services &amp; booking</span></div>' +
+            '<div><strong>Brandon Holdings</strong><span>Ask, add to cart &amp; check out</span></div>' +
             '<button type="button" id="bhg-ai-close" aria-label="Close chat">&times;</button>' +
           '</div>' +
           '<div id="bhg-ai-log"></div>' +
@@ -164,7 +440,7 @@
         credentials: 'omit',
         cache: 'no-store',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ sessionId: sessionId(), message: text })
+        body: JSON.stringify({ sessionId: sessionId(), message: text, cart: cartPayload() })
       }).then(function (r) {
         return r.json().catch(function () { return null; }).then(function (j) { return { ok: r.ok, j: j }; });
       }).catch(function (err) {
@@ -191,6 +467,7 @@
           var j = (out && out.j) || {};
           var reply = (j.message || j.error || 'Sorry, something went wrong. Please use the contact page.');
           addMsg('bot', reply);
+          applyActions(j.actions, text);
           if (j.humanHandover) {
             addMsg('sys', 'A team member can take it from here. Open the contact page if you would rather write or call.');
             var a = document.createElement('a');
@@ -207,6 +484,7 @@
         .catch(function () {
           hideThinking();
           addMsg('bot', 'The assistant is unavailable right now. Please use WhatsApp or the contact page.');
+          applyActions([], text);
         })
         .then(function () {
           hideThinking();
