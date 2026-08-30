@@ -547,7 +547,7 @@
     var prefix = segs.length ? segs.map(function () { return '..'; }).join('/') + '/' : '';
     var s = document.createElement('script');
     s.id = 'bhg-ai-widget-src';
-    s.src = prefix + 'assets/ai-widget.js?v=2';
+    s.src = prefix + 'assets/ai-widget.js?v=3';
     s.defer = true;
     document.head.appendChild(s);
   }

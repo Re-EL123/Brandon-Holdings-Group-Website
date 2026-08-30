@@ -4,11 +4,11 @@
   if (window.BHG_AI_WIDGET) return;
   window.BHG_AI_WIDGET = true;
 
-  var API = window.BHHG_API_BASE
-    ? String(window.BHHG_API_BASE).replace(/\/+$/, '') + '/api/ai'
-    : (location.protocol === 'http:' || location.protocol === 'https:')
-      ? '/api/ai'
-      : 'https://brandonholdingsgroup-api-delta.vercel.app/api/ai';
+  var API = (window.BHHG_API_BASE
+    ? String(window.BHHG_API_BASE).replace(/\/+$/, '')
+    : (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? ''
+      : 'https://brandonholdingsgroup-api-delta.vercel.app') + '/api/ai';
   var SID_KEY = 'bhhg_ai_sid';
   var welcome = 'Hi — I am the Brandon Holdings Group assistant. Ask about our services, fees, or how to book a consultation.';
   var enabled = true;
