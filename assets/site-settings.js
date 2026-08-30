@@ -126,6 +126,9 @@
   var PLUS_ICON =
     '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
 
+  var CHAT_ICON =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>';
+
     var CART_ICON =
     '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>';
 
@@ -189,12 +192,14 @@
     fab.className = 'bhg-fab';
     fab.innerHTML =
       '<div class="bhg-fab-actions">' +
-      '<a class="bhg-fab-action bhg-fab-book" href="' + consultHref() + '">' +
+      '<button type="button" class="bhg-fab-action bhg-fab-chat" data-tip="Chat with us" aria-label="Chat with us">' +
+      CHAT_ICON + '<span>Chat with us</span></button>' +
+      '<a class="bhg-fab-action bhg-fab-book" href="' + consultHref() + '" data-tip="Book a consultation">' +
       CAL_ICON + '<span>Book a consultation</span></a>' +
-      '<a class="bhg-fab-action bhg-fab-wa" href="' + waLink(DEFAULTS.whatsapp) + '" target="_blank" rel="noopener">' +
+      '<a class="bhg-fab-action bhg-fab-wa" href="' + waLink(DEFAULTS.whatsapp) + '" target="_blank" rel="noopener" data-tip="Message on WhatsApp">' +
       WA_ICON + '<span>WhatsApp</span></a>' +
       '</div>' +
-      '<button type="button" class="bhg-fab-toggle" aria-label="Contact options" aria-expanded="false">' +
+      '<button type="button" class="bhg-fab-toggle" aria-label="Contact options" aria-expanded="false" data-tip="Contact us">' +
       PLUS_ICON + '</button>';
     body.appendChild(fab);
 
@@ -203,6 +208,7 @@
       toggle.addEventListener('click', function () {
         var open = fab.classList.toggle('open');
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.setAttribute('data-tip', open ? 'Close' : 'Contact us');
       });
     }
     var actions = fab.querySelectorAll('.bhg-fab-action');
@@ -210,11 +216,27 @@
       actions[i].addEventListener('click', function () {
         fab.classList.remove('open');
         var t = fab.querySelector('.bhg-fab-toggle');
-        if (t) t.setAttribute('aria-expanded', 'false');
+        if (t) {
+          t.setAttribute('aria-expanded', 'false');
+          t.setAttribute('data-tip', 'Contact us');
+        }
+      });
+    }
+    var chatBtn = fab.querySelector('.bhg-fab-chat');
+    if (chatBtn) {
+      chatBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (typeof window.BHG_openChat === 'function') window.BHG_openChat();
+        else window.BHG_openChatQueued = true;
       });
     }
     document.addEventListener('click', function (e) {
-      if (!fab.contains(e.target)) fab.classList.remove('open');
+      if (fab.contains(e.target)) return;
+      fab.classList.remove('open');
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('data-tip', 'Contact us');
+      }
     });
   }
 
@@ -454,19 +476,22 @@
      '.bhg-fab{position:fixed;right:20px;bottom:20px;z-index:99990;display:flex;flex-direction:column;align-items:flex-end;gap:14px}' +
     '.bhg-fab-actions{display:flex;flex-direction:column;align-items:flex-end;gap:12px;opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .25s ease,transform .25s ease,visibility .25s}' +
     '.bhg-fab.open .bhg-fab-actions{opacity:1;visibility:visible;transform:none}' +
-    '.bhg-fab-action{display:inline-flex;align-items:center;gap:10px;padding:13px 20px;border-radius:999px;color:#fff;text-decoration:none;font:600 15px/1 Arial,Helvetica,sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.28);white-space:nowrap;transition:transform .18s ease,box-shadow .18s ease}' +
+    '.bhg-fab-action{position:relative;display:inline-flex;align-items:center;gap:10px;padding:13px 20px;border-radius:999px;color:#fff;text-decoration:none;font:600 15px/1 Arial,Helvetica,sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.28);white-space:nowrap;transition:transform .18s ease,box-shadow .18s ease;border:none;cursor:pointer}' +
     '.bhg-fab-action:hover{transform:translateY(-3px);box-shadow:0 14px 28px rgba(0,0,0,.38)}' +
     '.bhg-fab-action:focus-visible{outline:2px solid #fff;outline-offset:3px}' +
     '.bhg-fab-action svg{width:20px;height:20px;fill:#fff;flex:none}' +
     '.bhg-fab-wa{border:2px solid rgba(255,255,255,.24);background:#25d366}' +
-    '.bhg-fab-book{border:2px solid rgba(255,255,255,.24);background:#0E6563}' +
-    '.bhg-fab-toggle{width:72px;height:72px;border:none;border-radius:50%;background:#0E6563;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 14px 30px rgba(0,0,0,.45);transition:transform .22s ease,box-shadow .22s ease;animation:bhg-fab-bob 3.2s ease-in-out infinite}' +
+    '.bhg-fab-book,.bhg-fab-chat{border:2px solid rgba(255,255,255,.24);background:#0E6563}' +
+    '.bhg-fab-toggle{position:relative;width:72px;height:72px;border:none;border-radius:50%;background:#0E6563;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 14px 30px rgba(0,0,0,.45);transition:transform .22s ease,box-shadow .22s ease;animation:bhg-fab-bob 3.2s ease-in-out infinite}' +
     '.bhg-fab-toggle:hover{box-shadow:0 20px 38px rgba(0,0,0,.52);transform:scale(1.06)}' +
     '.bhg-fab-toggle:focus-visible{outline:3px solid #fff;outline-offset:4px}' +
     '.bhg-fab-toggle svg{width:36px !important;height:36px !important;stroke:#fff !important;fill:none !important;flex:none !important;transition:transform .25s ease}' +
     '.bhg-fab.open .bhg-fab-toggle svg{transform:rotate(45deg)}' +
     '.bhg-fab-actions .bhg-fab-action:nth-child(1){animation:bhg-fab-in .36s ease-out both}' +
     '.bhg-fab-actions .bhg-fab-action:nth-child(2){animation:bhg-fab-in .36s ease-out .06s both}' +
+    '.bhg-fab-actions .bhg-fab-action:nth-child(3){animation:bhg-fab-in .36s ease-out .12s both}' +
+    '.bhg-fab [data-tip]::after{content:attr(data-tip);position:absolute;right:calc(100% + 12px);top:50%;transform:translateY(-50%);background:#0F172A;color:#fff;font:600 12px/1.2 Arial,Helvetica,sans-serif;padding:7px 10px;border-radius:8px;white-space:nowrap;opacity:0;visibility:hidden;pointer-events:none;box-shadow:0 8px 18px rgba(15,23,42,.28);transition:opacity .15s ease,visibility .15s}' +
+    '.bhg-fab [data-tip]:hover::after,.bhg-fab [data-tip]:focus-visible::after{opacity:1;visibility:visible}' +
     '@keyframes bhg-fab-bob{0%,100%{transform:translateY(0)}40%{transform:translateY(-10px)}}' +
     '@keyframes bhg-fab-in{from{opacity:0;transform:translateY(14px) scale(.88)}to{opacity:1;transform:none}}' +
     '.bhg-fab{bottom:20px}' +
@@ -522,7 +547,7 @@
     var prefix = segs.length ? segs.map(function () { return '..'; }).join('/') + '/' : '';
     var s = document.createElement('script');
     s.id = 'bhg-ai-widget-src';
-    s.src = prefix + 'assets/ai-widget.js?v=1';
+    s.src = prefix + 'assets/ai-widget.js?v=2';
     s.defer = true;
     document.head.appendChild(s);
   }
