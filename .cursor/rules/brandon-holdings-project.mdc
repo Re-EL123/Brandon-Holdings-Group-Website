@@ -17,6 +17,7 @@ Three sibling repos. Treat them as one system.
 - Site `vercel.json` rewrites `/api/(.*)` to that API. HTML also hardcodes the origin.
 - Admin default base is the same URL (`?api=` or `window.ADMIN_API_BASE` to override). Unlock with the API `ADMIN_TOKEN`.
 - `SITE_ID` is `brandonholdings`. Local self-host: API `SITE_ROOT` = this site folder, port 8080.
+- Chat model runs on the existing Cloudflare worker `chatre1` (Workers AI / Llama). The site widget still only POSTs `/api/ai`.
 
 ## 12 serverless functions — hard cap
 
