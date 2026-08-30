@@ -47,6 +47,24 @@
     }
   }
 
+  function logEvent(kind, extra) {
+    var payload = { op: 'event', sessionId: sessionId(), kind: kind };
+    if (extra) {
+      if (extra.id) payload.id = extra.id;
+      if (extra.email) payload.email = extra.email;
+      if (extra.total) payload.total = extra.total;
+    }
+    fetch(API, {
+      method: 'POST',
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true
+    }).catch(function () {});
+  }
+
   function savedEmail(next) {
     try {
       if (arguments.length) {
@@ -339,6 +357,7 @@
           a.textContent = 'Complete payment (' + money(result.total) + ')';
           card.appendChild(a);
           addMsg('bot', 'Your payment link is ready. A copy was also emailed to ' + result.email + '.');
+          logEvent('checkout', { email: result.email, total: result.total });
         } else {
           var err = document.createElement('p');
           err.className = 'bhg-ai-cart-note bhg-ai-cart-err';
@@ -393,6 +412,7 @@
       ? ' I also added the required earlier steps so this service can be purchased.'
       : '';
     addMsg('bot', 'Added ' + cat.name + ' (' + money(cat.price) + ').' + extra + ' Enter your email below to get an iKhokha payment link.');
+    logEvent('cart', { id: id });
     renderCartCard({ email: savedEmail() });
   }
 
