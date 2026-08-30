@@ -23,16 +23,14 @@
     try {
       var payload = { page: location.pathname, uid: userID() };
       if (document.referrer) payload.ref = document.referrer;
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(API + '/stats', new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
-      } else {
-        fetch(API + '/stats', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          keepalive: true,
-        });
-      }
+      fetch(API + '/stats', {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(function () { /* ignore */ });
     } catch (e) { /* noop */ }
   }
 
@@ -547,7 +545,7 @@
     var prefix = segs.length ? segs.map(function () { return '..'; }).join('/') + '/' : '';
     var s = document.createElement('script');
     s.id = 'bhg-ai-widget-src';
-    s.src = prefix + 'assets/ai-widget.js?v=3';
+    s.src = prefix + 'assets/ai-widget.js?v=5';
     s.defer = true;
     document.head.appendChild(s);
   }

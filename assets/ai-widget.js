@@ -68,6 +68,16 @@
       '#bhg-ai-input:focus{outline:2px solid #0E6563;outline-offset:-1px}' +
       '#bhg-ai-send{background:#0E6563;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}' +
       '#bhg-ai-send[disabled]{opacity:.6;cursor:progress}' +
+      '.bhg-ai-msg.think{display:inline-flex;align-items:center;gap:8px;color:#0E6563;white-space:nowrap}' +
+      '.bhg-ai-think-label{font-size:13px;font-weight:600}' +
+      '.bhg-ai-think-label:after{content:"";animation:bhg-ai-ellipsis 1.4s infinite}' +
+      '.bhg-ai-dots{display:inline-flex;align-items:flex-end;gap:4px;height:12px}' +
+      '.bhg-ai-dots span{width:6px;height:6px;border-radius:50%;background:#0E6563;opacity:.35;animation:bhg-ai-dot 1.05s infinite ease-in-out}' +
+      '.bhg-ai-dots span:nth-child(2){animation-delay:.16s}' +
+      '.bhg-ai-dots span:nth-child(3){animation-delay:.32s}' +
+      '@keyframes bhg-ai-dot{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-5px);opacity:1}}' +
+      '@keyframes bhg-ai-ellipsis{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}' +
+      '@media(prefers-reduced-motion:reduce){.bhg-ai-dots span,.bhg-ai-think-label:after{animation:none}.bhg-ai-dots span{opacity:.7}.bhg-ai-think-label:after{content:"…"}}' +
       '@media(max-width:767px){#bhg-ai{right:12px;left:12px;bottom:100px}#bhg-ai-panel{width:auto;height:min(70vh,560px)}}';
     document.head.appendChild(s);
   }
@@ -79,6 +89,27 @@
     node.textContent = text;
     log.appendChild(node);
     log.scrollTop = log.scrollHeight;
+  }
+
+  function showThinking() {
+    hideThinking();
+    if (!log) return;
+    var node = document.createElement('div');
+    node.id = 'bhg-ai-think';
+    node.className = 'bhg-ai-msg bot think';
+    node.setAttribute('role', 'status');
+    node.setAttribute('aria-live', 'polite');
+    node.setAttribute('aria-label', 'Assistant is thinking');
+    node.innerHTML =
+      '<span class="bhg-ai-think-label">Thinking</span>' +
+      '<span class="bhg-ai-dots" aria-hidden="true"><span></span><span></span><span></span></span>';
+    log.appendChild(node);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function hideThinking() {
+    var n = document.getElementById('bhg-ai-think');
+    if (n && n.parentNode) n.parentNode.removeChild(n);
   }
 
   function greet() {
@@ -126,6 +157,24 @@
 
     root.querySelector('#bhg-ai-close').addEventListener('click', closeChat);
 
+    function postChat(text, attempt) {
+      return fetch(API, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ sessionId: sessionId(), message: text })
+      }).then(function (r) {
+        return r.json().catch(function () { return null; }).then(function (j) { return { ok: r.ok, j: j }; });
+      }).catch(function (err) {
+        if (attempt >= 1) throw err;
+        return new Promise(function (resolve) { setTimeout(resolve, 700); }).then(function () {
+          return postChat(text, attempt + 1);
+        });
+      });
+    }
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (busy || !enabled) return;
@@ -135,14 +184,11 @@
       addMsg('me', text);
       busy = true;
       send.disabled = true;
-      fetch(API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: sessionId(), message: text })
-      })
-        .then(function (r) { return r.json().catch(function () { return null; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+      showThinking();
+      postChat(text, 0)
         .then(function (out) {
-          var j = out.j || {};
+          hideThinking();
+          var j = (out && out.j) || {};
           var reply = (j.message || j.error || 'Sorry, something went wrong. Please use the contact page.');
           addMsg('bot', reply);
           if (j.humanHandover) {
@@ -159,9 +205,11 @@
           }
         })
         .catch(function () {
+          hideThinking();
           addMsg('bot', 'The assistant is unavailable right now. Please use WhatsApp or the contact page.');
         })
         .then(function () {
+          hideThinking();
           busy = false;
           send.disabled = false;
         });
