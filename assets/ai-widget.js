@@ -18,6 +18,8 @@
   var input;
   var log;
   var send;
+  var SIZE_KEY = 'bhhg_ai_expanded';
+  var expandBtn;
   var greeted = false;
   var FALLBACK_CATALOG = {
     1: { name: 'Virtual Business Consultation', price: 499.99 },
@@ -89,13 +91,20 @@
     s.textContent =
       '#bhg-ai{position:fixed;right:20px;bottom:108px;z-index:99991;font-family:Arial,Helvetica,sans-serif;display:none}' +
       '#bhg-ai.open{display:block}' +
-      '#bhg-ai-panel{width:min(380px,calc(100vw - 32px));height:min(520px,calc(100vh - 140px));background:#fff;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 40px rgba(15,23,42,.22);color:#0F172A}' +
-      '#bhg-ai-head{background:#0E6563;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}' +
+      '#bhg-ai.open.expanded{display:flex}' +
+      '#bhg-ai.expanded{inset:12px;right:12px;left:12px;top:12px;bottom:12px;z-index:100000}' +
+      '#bhg-ai-panel{width:min(380px,calc(100vw - 32px));height:min(520px,calc(100vh - 140px));min-width:280px;min-height:360px;max-width:calc(100vw - 32px);max-height:calc(100vh - 120px);background:#fff;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 40px rgba(15,23,42,.22);color:#0F172A;resize:both}' +
+      '#bhg-ai.expanded #bhg-ai-panel{width:100%;height:100%;max-width:none;max-height:none;min-width:0;min-height:0;resize:none}' +
+      '#bhg-ai-head{background:#0E6563;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}' +
       '#bhg-ai-head strong{font-size:15px}' +
       '#bhg-ai-head span{display:block;font-size:12px;opacity:.85;font-weight:400}' +
-      '#bhg-ai-close{background:transparent;border:0;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:22px;line-height:1}' +
-      '#bhg-ai-close:hover{background:rgba(255,255,255,.14)}' +
-      '#bhg-ai-close:focus-visible{outline:2px solid #fff;outline-offset:2px}' +
+      '#bhg-ai-head-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}' +
+      '#bhg-ai-expand,#bhg-ai-close{background:transparent;border:0;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0}' +
+      '#bhg-ai-expand:hover,#bhg-ai-close:hover{background:rgba(255,255,255,.14)}' +
+      '#bhg-ai-expand:focus-visible,#bhg-ai-close:focus-visible{outline:2px solid #fff;outline-offset:2px}' +
+      '#bhg-ai-expand svg{display:block}' +
+      '#bhg-ai.expanded .bhg-ai-icon-expand,#bhg-ai:not(.expanded) .bhg-ai-icon-restore{display:none}' +
+      '#bhg-ai-close{font-size:22px}' +
       '#bhg-ai-log{flex:1;overflow:auto;padding:14px;background:#f6f8fb}' +
       '.bhg-ai-msg{max-width:92%;margin:0 0 10px;padding:10px 12px;border-radius:12px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}' +
       '.bhg-ai-msg.bot{background:#fff;border:1px solid #dce7e6;color:#0F172A}' +
@@ -130,7 +139,7 @@
       '.bhg-ai-cart-pay[disabled]{opacity:.6;cursor:progress}' +
       '.bhg-ai-cart-note{margin:8px 0 0;font-size:12px;color:#64748b}' +
       '.bhg-ai-paylink{display:block;margin-top:8px;background:#0E6563;color:#fff!important;text-align:center;padding:10px;border-radius:8px;font-weight:700;text-decoration:none}' +
-      '@media(max-width:767px){#bhg-ai{right:12px;left:12px;bottom:100px}#bhg-ai-panel{width:auto;height:min(70vh,560px)}}';
+      '@media(max-width:767px){#bhg-ai{right:12px;left:12px;bottom:100px}#bhg-ai-panel{width:auto;height:min(70vh,560px);resize:none}#bhg-ai.expanded{inset:8px;bottom:8px}#bhg-ai.expanded #bhg-ai-panel{height:100%}}';
     document.head.appendChild(s);
   }
 
@@ -387,6 +396,30 @@
     renderCartCard({ email: savedEmail() });
   }
 
+  function isExpanded() {
+    try { return localStorage.getItem(SIZE_KEY) === '1'; } catch (e) { return false; }
+  }
+
+  function syncExpandUi() {
+    if (!root || !expandBtn) return;
+    var on = root.classList.contains('expanded');
+    expandBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    expandBtn.setAttribute('aria-label', on ? 'Restore chat size' : 'Expand chat');
+    expandBtn.title = on ? 'Restore' : 'Expand';
+  }
+
+  function setExpanded(on) {
+    if (!root) return;
+    if (on) root.classList.add('expanded');
+    else root.classList.remove('expanded');
+    try { localStorage.setItem(SIZE_KEY, on ? '1' : '0'); } catch (e) { /* ignore */ }
+    syncExpandUi();
+  }
+
+  function toggleExpanded() {
+    setExpanded(!(root && root.classList.contains('expanded')));
+  }
+
   function greet() {
     if (greeted) return;
     greeted = true;
@@ -414,7 +447,13 @@
         '<div id="bhg-ai-panel" role="dialog" aria-label="Chat with Brandon Holdings Group">' +
           '<div id="bhg-ai-head">' +
             '<div><strong>Brandon Holdings</strong><span>Ask, add to cart &amp; check out</span></div>' +
-            '<button type="button" id="bhg-ai-close" aria-label="Close chat">&times;</button>' +
+            '<div id="bhg-ai-head-actions">' +
+              '<button type="button" id="bhg-ai-expand" aria-label="Expand chat" aria-pressed="false" title="Expand">' +
+                '<svg class="bhg-ai-icon-expand" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 2H2v4M10 2h4v4M2 10v4h4M14 10v4h-4"/><path d="M2 2l4 4M14 2l-4 4M2 14l4-4M14 14l-4-4"/></svg>' +
+                '<svg class="bhg-ai-icon-restore" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 6h6v6H4z"/><path d="M6 4h6v6"/></svg>' +
+              '</button>' +
+              '<button type="button" id="bhg-ai-close" aria-label="Close chat">&times;</button>' +
+            '</div>' +
           '</div>' +
           '<div id="bhg-ai-log"></div>' +
           '<form id="bhg-ai-form">' +
@@ -431,7 +470,10 @@
     input = root.querySelector('#bhg-ai-input');
     send = root.querySelector('#bhg-ai-send');
 
+    expandBtn = root.querySelector('#bhg-ai-expand');
+    if (expandBtn) expandBtn.addEventListener('click', toggleExpanded);
     root.querySelector('#bhg-ai-close').addEventListener('click', closeChat);
+    setExpanded(isExpanded());
 
     function postChat(text, attempt) {
       return fetch(API, {
