@@ -22,4 +22,6 @@ Three sibling repos. Treat them as one system.
 
 Never add a 13th `api/**/*.js` file in the API repo (Vercel Hobby limit; already at 12). New endpoints must reuse or merge an existing function file.
 
-Current functions: `noop`, `contact`, `forminator`, `settings`, `stats`, `blog`, `admin/settings`, `admin/stats`, `admin/payments`, `admin/blog`, `ikhokha/status`, `ikhokha/webhook`.
+Current functions: `noop`, `contact`, `forminator`, `settings`, `stats`, `blog`, `admin/settings`, `admin/stats`, `admin/payments`, `ai`, `ikhokha/status`, `ikhokha/webhook`.
+
+`/api/admin/blog` and `/api/chat` are rewrites onto `/api/blog` and `/api/ai` (rewrites do not count as functions). Do not add `api/voice.js` or `api/whatsapp/*.js` — keep extra AI channels on `api/ai.js`.

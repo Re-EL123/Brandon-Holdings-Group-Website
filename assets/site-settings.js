@@ -516,10 +516,22 @@
     add(document.getElementById('ast-hf-menu-1-mobile'));
   }
 
+  function loadAiWidget() {
+    if (document.getElementById('bhg-ai-widget-src')) return;
+    var segs = location.pathname.replace(/index\.html$/, '').split('/').filter(Boolean);
+    var prefix = segs.length ? segs.map(function () { return '..'; }).join('/') + '/' : '';
+    var s = document.createElement('script');
+    s.id = 'bhg-ai-widget-src';
+    s.src = prefix + 'assets/ai-widget.js?v=1';
+    s.defer = true;
+    document.head.appendChild(s);
+  }
+
    onReady(function () {
      var leftover = document.getElementById('bhg-header-spacer');
      if (leftover && leftover.parentNode) leftover.parentNode.removeChild(leftover);
      injectBlogNav();
+     loadAiWidget();
      buildFAB();
     buildGlobalCart();
     updateCartUI();
